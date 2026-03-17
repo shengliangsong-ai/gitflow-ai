@@ -1,16 +1,17 @@
 import React, { useEffect, useState } from 'react';
 import { auth, loginWithGoogle, logout } from './firebase';
 import { onAuthStateChanged, User } from 'firebase/auth';
-import { LogOut, GitMerge, Terminal as TerminalIcon, Map, LayoutDashboard } from 'lucide-react';
+import { LogOut, GitMerge, Terminal as TerminalIcon, Map, LayoutDashboard, Command } from 'lucide-react';
 import Dashboard from './components/Dashboard';
 import Terminal from './components/Terminal';
 import Roadmap from './components/Roadmap';
+import LocalCLI from './components/LocalCLI';
 import { trackPageView, identifyUser } from './analytics';
 
 export default function App() {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState<'dashboard' | 'terminal' | 'roadmap'>('dashboard');
+  const [activeTab, setActiveTab] = useState<'dashboard' | 'terminal' | 'roadmap' | 'cli'>('dashboard');
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
@@ -85,6 +86,13 @@ export default function App() {
                   CLI Terminal
                 </button>
                 <button
+                  onClick={() => setActiveTab('cli')}
+                  className={`flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium transition-colors ${activeTab === 'cli' ? 'bg-zinc-800 text-white' : 'text-zinc-400 hover:text-white hover:bg-zinc-800/50'}`}
+                >
+                  <Command className="w-4 h-4" />
+                  Local CLI
+                </button>
+                <button
                   onClick={() => setActiveTab('roadmap')}
                   className={`flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium transition-colors ${activeTab === 'roadmap' ? 'bg-zinc-800 text-white' : 'text-zinc-400 hover:text-white hover:bg-zinc-800/50'}`}
                 >
@@ -115,6 +123,7 @@ export default function App() {
         {activeTab === 'dashboard' && <Dashboard user={user} />}
         {activeTab === 'terminal' && <Terminal />}
         {activeTab === 'roadmap' && <Roadmap />}
+        {activeTab === 'cli' && <LocalCLI />}
       </main>
     </div>
   );
