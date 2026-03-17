@@ -5,6 +5,7 @@ import { LogOut, GitMerge, Terminal as TerminalIcon, Map, LayoutDashboard } from
 import Dashboard from './components/Dashboard';
 import Terminal from './components/Terminal';
 import Roadmap from './components/Roadmap';
+import { trackPageView, identifyUser } from './analytics';
 
 export default function App() {
   const [user, setUser] = useState<User | null>(null);
@@ -14,10 +15,20 @@ export default function App() {
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
       setUser(currentUser);
+      if (currentUser) {
+        identifyUser(currentUser.uid, {
+          email: currentUser.email,
+          displayName: currentUser.displayName
+        });
+      }
       setLoading(false);
     });
     return () => unsubscribe();
   }, []);
+
+  useEffect(() => {
+    trackPageView(activeTab);
+  }, [activeTab]);
 
   if (loading) {
     return <div className="min-h-screen flex items-center justify-center bg-zinc-950 text-white">Loading...</div>;

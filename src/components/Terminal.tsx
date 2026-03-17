@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { collection, query, where, getDocs, updateDoc, doc, setDoc, onSnapshot } from 'firebase/firestore';
 import { db } from '../firebase';
 import { Terminal as TerminalIcon } from 'lucide-react';
+import { trackCliCommand } from '../analytics';
 
 interface HistoryItem {
   id: string;
@@ -46,6 +47,9 @@ export default function Terminal() {
 
     const args = cmdStr.split(' ');
     const command = args[0].toLowerCase();
+    
+    // Track the command using GitLab Browser SDK
+    trackCliCommand(command, args.slice(1));
 
     try {
       switch (command) {
