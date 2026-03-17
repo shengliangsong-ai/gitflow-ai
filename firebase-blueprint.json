@@ -1,0 +1,68 @@
+{
+  "entities": {
+    "Team": {
+      "title": "Team",
+      "description": "A team of engineers.",
+      "type": "object",
+      "properties": {
+        "name": { "type": "string", "description": "Team name" }
+      },
+      "required": ["name"]
+    },
+    "Engineer": {
+      "title": "Engineer",
+      "description": "An engineer belonging to a team.",
+      "type": "object",
+      "properties": {
+        "name": { "type": "string", "description": "Engineer name" },
+        "teamId": { "type": "string", "description": "ID of the team" }
+      },
+      "required": ["name", "teamId"]
+    },
+    "Branch": {
+      "title": "Branch",
+      "description": "A git branch.",
+      "type": "object",
+      "properties": {
+        "name": { "type": "string", "description": "Branch name" },
+        "type": { "type": "string", "enum": ["primary", "project", "release"], "description": "Type of branch" },
+        "teamId": { "type": "string", "description": "ID of the team (for project branches)" },
+        "status": { "type": "string", "enum": ["active", "archived"], "description": "Status of the branch" }
+      },
+      "required": ["name", "type", "status"]
+    },
+    "PullRequest": {
+      "title": "PullRequest",
+      "description": "A pull request.",
+      "type": "object",
+      "properties": {
+        "title": { "type": "string", "description": "PR title" },
+        "sourceBranch": { "type": "string", "description": "Source branch name" },
+        "targetBranch": { "type": "string", "description": "Target branch name" },
+        "authorId": { "type": "string", "description": "ID of the author (engineer)" },
+        "status": { "type": "string", "enum": ["open", "merging", "conflict", "testing", "merged", "failed"], "description": "Status of the PR" },
+        "logs": { "type": "array", "items": { "type": "string" }, "description": "Logs from AI merge process" },
+        "files": { "type": "string", "description": "JSON string of files involved in the PR" }
+      },
+      "required": ["title", "sourceBranch", "targetBranch", "authorId", "status"]
+    }
+  },
+  "firestore": {
+    "teams": {
+      "schema": { "$ref": "#/entities/Team" },
+      "description": "Teams collection"
+    },
+    "engineers": {
+      "schema": { "$ref": "#/entities/Engineer" },
+      "description": "Engineers collection"
+    },
+    "branches": {
+      "schema": { "$ref": "#/entities/Branch" },
+      "description": "Branches collection"
+    },
+    "pullRequests": {
+      "schema": { "$ref": "#/entities/PullRequest" },
+      "description": "Pull Requests collection"
+    }
+  }
+}

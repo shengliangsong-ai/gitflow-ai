@@ -1,0 +1,66 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // ===============================================================
+    // Assumed Data Model
+    // ===============================================================
+    //
+    // Collection: teams
+    // Fields:
+    //   - name: string (required)
+    //
+    // Collection: engineers
+    // Fields:
+    //   - name: string (required)
+    //   - teamId: string (required)
+    //
+    // Collection: branches
+    // Fields:
+    //   - name: string (required)
+    //   - type: string (required, 'primary' | 'project' | 'release')
+    //   - status: string (required, 'active' | 'archived')
+    //   - teamId: string (optional)
+    //
+    // Collection: pullRequests
+    // Fields:
+    //   - title: string (required)
+    //   - sourceBranch: string (required)
+    //   - targetBranch: string (required)
+    //   - authorId: string (required)
+    //   - status: string (required, 'open' | 'merging' | 'conflict' | 'testing' | 'merged' | 'failed')
+    //   - logs: list of strings (optional)
+    //   - files: string (optional, JSON stringified)
+    //
+    // ===============================================================
+
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+
+    match /teams/{teamId} {
+      allow read: if isAuthenticated();
+      allow create, update, delete: if isAuthenticated();
+    }
+
+    match /engineers/{engineerId} {
+      allow read: if isAuthenticated();
+      allow create, update, delete: if isAuthenticated();
+    }
+
+    match /branches/{branchId} {
+      allow read: if isAuthenticated();
+      allow create, update, delete: if isAuthenticated();
+    }
+
+    match /pullRequests/{prId} {
+      allow read: if isAuthenticated();
+      allow create, update, delete: if isAuthenticated();
+    }
+
+    match /system/{docId} {
+      allow read: if isAuthenticated();
+      allow create, update, delete: if isAuthenticated();
+    }
+  }
+}

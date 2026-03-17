@@ -1,0 +1,5 @@
+{
+  "name": "AI Auto-Merge Queue",
+  "description": "A GitLab hackathon project featuring an AI-powered auto-merge workflow queue that automatically resolves conflicts, runs tests, and merges project branches to the primary branch.",
+  "requestFramePermissions": []
+}
