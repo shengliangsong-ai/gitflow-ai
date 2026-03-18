@@ -23,12 +23,18 @@ export interface PullRequest {
   sourceBranch: string;
   targetBranch: string;
   authorId: string;
-  status: 'code_review' | 'addressing_comments' | 'merge_queue' | 'merging' | 'conflict' | 'testing' | 'merged' | 'failed' | 'removed';
+  status: 'code_review' | 'addressing_comments' | 'merge_queue' | 'merging' | 'conflict' | 'testing' | 'merged' | 'failed' | 'removed' | 'paused';
   priority: 'high' | 'normal' | 'low';
   groupId?: string;
   queuePosition?: number;
   logs: string[];
   files: string; // JSON string of files
+  semanticAnalysis?: {
+    intentSummary: string;
+    riskLevel: 'high' | 'medium' | 'low';
+    affectedSystems: string[];
+    logicalConflicts: string[];
+  };
 }
 
 export interface FileData {

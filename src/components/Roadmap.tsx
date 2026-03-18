@@ -5,10 +5,10 @@ export default function Roadmap() {
   return (
     <div className="max-w-4xl mx-auto space-y-8">
       <div className="bg-zinc-900 rounded-2xl border border-zinc-800 p-8">
-        <h1 className="text-3xl font-bold mb-4">Design Doc: AI Auto-Merge Queue</h1>
+        <h1 className="text-3xl font-bold mb-4">Roadmap: Semantic Orchestration Layer</h1>
         <div className="prose prose-invert max-w-none">
           <p className="text-zinc-400 text-lg mb-6">
-            A centralized Git workflow management system powered by AI to automate conflict resolution, testing, and merging across project and primary branches.
+            A next-generation orchestration layer powered by Gemini 3.1 Pro to eliminate "Merge Hell" using Semantic Intent Analysis and Advanced Merge Topologies.
           </p>
           
           <h2 className="text-xl font-semibold text-white mt-8 mb-4">Architecture Overview</h2>
@@ -19,21 +19,14 @@ export default function Roadmap() {
             <li><strong>Hosting:</strong> Firebase Hosting & Cloud Run.</li>
           </ul>
 
-          <h2 className="text-xl font-semibold text-white mt-8 mb-4">AI GitFlow (Scope: Steps 6-10)</h2>
+          <h2 className="text-xl font-semibold text-white mt-8 mb-4">Core Capabilities</h2>
           <ol className="list-decimal pl-6 space-y-2 text-zinc-300">
-            <li><strong>Submit to Code Review Queue:</strong> PRs enter the system and await human or AI review.</li>
-            <li><strong>Address Review Commit:</strong> Iterative updates to the PR based on feedback.</li>
-            <li><strong>Move to Merge Queue:</strong> PR is approved and enters the automated merge queue.</li>
-            <li><strong>Merge to Project Branch:</strong> AI resolves conflicts, runs tests, and merges into the team's project branch.</li>
-            <li><strong>Merge to Master (Primary) Branch:</strong> Bi-weekly automated syncs merge project branches into the primary branch.</li>
+            <li><strong>Semantic Intent Analysis:</strong> AI understands the purpose of changes, calculating risk and identifying affected systems.</li>
+            <li><strong>AST-Aware Conflict Resolution:</strong> Resolves deep logical conflicts beyond simple line-diffing.</li>
+            <li><strong>Advanced Merge Topologies:</strong> Supports N-Way Star Merge, Cascading Rebase, and Shadow Integration.</li>
+            <li><strong>CLI Orchestration:</strong> Command-line access for engineers to manage queue state (pause, resume, reorder, group).</li>
+            <li><strong>Built-in Benchmarks:</strong> Run <code className="text-indigo-300">git-ai benchmark</code> locally to trigger automated self-tests showing various conflict resolution examples.</li>
           </ol>
-
-          <h2 className="text-xl font-semibold text-white mt-8 mb-4">Advanced Queue Features</h2>
-          <ul className="list-disc pl-6 space-y-2 text-zinc-300">
-            <li><strong>Priority Queues:</strong> High priority (e.g., hotfixes) bypass normal queue order.</li>
-            <li><strong>Atomic Grouping:</strong> Batch PRs together to ensure they merge as an all-or-nothing unit.</li>
-            <li><strong>CLI Interface:</strong> Command-line access for engineers and AI agents to manage queue state (pause, resume, reorder, remove).</li>
-          </ul>
         </div>
       </div>
 
@@ -51,40 +44,40 @@ export default function Roadmap() {
           <div className="flex items-start gap-4 p-4 bg-zinc-950 rounded-xl border border-zinc-800/50">
             <CheckCircle2 className="w-6 h-6 text-emerald-400 shrink-0" />
             <div>
-              <h3 className="font-semibold text-white">Day 2: AI Conflict Resolution & Testing</h3>
-              <p className="text-sm text-zinc-400">Integrate Gemini 3.1 Pro to simulate resolving git conflicts and running CI/CD tests.</p>
+              <h3 className="font-semibold text-white">Day 2: Semantic Intent Analysis</h3>
+              <p className="text-sm text-zinc-400">Integrate Gemini 3.1 Pro to analyze PR intent, calculate risk levels, and detect logical conflicts.</p>
             </div>
           </div>
 
           <div className="flex items-start gap-4 p-4 bg-zinc-950 rounded-xl border border-zinc-800/50">
             <CheckCircle2 className="w-6 h-6 text-emerald-400 shrink-0" />
             <div>
-              <h3 className="font-semibold text-white">Day 3: CLI Interface & Design Doc</h3>
-              <p className="text-sm text-zinc-400">Build the in-app terminal for queue management and document the architecture.</p>
+              <h3 className="font-semibold text-white">Day 3: AST-Aware Conflict Resolution</h3>
+              <p className="text-sm text-zinc-400">Implement AI-driven resolution strategies that understand code structure and dependencies.</p>
             </div>
           </div>
 
           <div className="flex items-start gap-4 p-4 bg-zinc-950 rounded-xl border border-zinc-800/50">
             <Clock className="w-6 h-6 text-indigo-400 shrink-0" />
             <div>
-              <h3 className="font-semibold text-white">Day 4: Atomic Batch Merging Logic</h3>
-              <p className="text-sm text-zinc-400">Implement the backend logic to handle grouped PRs as a single atomic transaction.</p>
+              <h3 className="font-semibold text-white">Day 4: CLI Orchestration & Benchmarks</h3>
+              <p className="text-sm text-zinc-400">Build the in-app terminal for queue management and implement the <code className="text-indigo-300">git-ai benchmark</code> self-test suite.</p>
             </div>
           </div>
 
           <div className="flex items-start gap-4 p-4 bg-zinc-950 rounded-xl border border-zinc-800/50">
             <Circle className="w-6 h-6 text-zinc-600 shrink-0" />
             <div>
-              <h3 className="font-semibold text-white">Day 5: Priority Queue Implementation</h3>
-              <p className="text-sm text-zinc-400">Update the merge worker to respect high/normal/low priority flags during processing.</p>
+              <h3 className="font-semibold text-white">Day 5: Advanced Merge Topologies</h3>
+              <p className="text-sm text-zinc-400">Implement backend logic for N-Way Star Merge and Cascading Rebase scenarios.</p>
             </div>
           </div>
 
           <div className="flex items-start gap-4 p-4 bg-zinc-950 rounded-xl border border-zinc-800/50">
             <Circle className="w-6 h-6 text-zinc-600 shrink-0" />
             <div>
-              <h3 className="font-semibold text-white">Day 6: End-to-End Testing & Bug Fixes</h3>
-              <p className="text-sm text-zinc-400">Simulate full team workflows and fix edge cases in the AI merge logic.</p>
+              <h3 className="font-semibold text-white">Day 6: End-to-End Testing & Polish</h3>
+              <p className="text-sm text-zinc-400">Simulate full team workflows, fix edge cases in the AI merge logic, and refine the UI.</p>
             </div>
           </div>
 

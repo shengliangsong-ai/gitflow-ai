@@ -2,7 +2,61 @@ import { GoogleGenAI, Modality } from "@google/genai";
 
 const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
 
+const DB_NAME = 'ai-gitflow-tts';
+const STORE_NAME = 'audio-cache';
+
+function initDB(): Promise<IDBDatabase> {
+  return new Promise((resolve, reject) => {
+    const request = indexedDB.open(DB_NAME, 1);
+    request.onerror = () => reject(request.error);
+    request.onsuccess = () => resolve(request.result);
+    request.onupgradeneeded = (event) => {
+      const db = (event.target as IDBOpenDBRequest).result;
+      if (!db.objectStoreNames.contains(STORE_NAME)) {
+        db.createObjectStore(STORE_NAME);
+      }
+    };
+  });
+}
+
+async function getCachedAudio(text: string): Promise<string | null> {
+  try {
+    const db = await initDB();
+    return new Promise((resolve) => {
+      const transaction = db.transaction(STORE_NAME, 'readonly');
+      const store = transaction.objectStore(STORE_NAME);
+      const request = store.get(text);
+      request.onsuccess = () => resolve(request.result || null);
+      request.onerror = () => resolve(null);
+    });
+  } catch (e) {
+    console.warn('IndexedDB get failed', e);
+    return null;
+  }
+}
+
+async function cacheAudio(text: string, base64Data: string): Promise<void> {
+  try {
+    const db = await initDB();
+    return new Promise((resolve) => {
+      const transaction = db.transaction(STORE_NAME, 'readwrite');
+      const store = transaction.objectStore(STORE_NAME);
+      const request = store.put(base64Data, text);
+      request.onsuccess = () => resolve();
+      request.onerror = () => resolve();
+    });
+  } catch (e) {
+    console.warn('IndexedDB put failed', e);
+  }
+}
+
 export async function generateSpeech(text: string): Promise<string | null> {
+  const cached = await getCachedAudio(text);
+  if (cached) {
+    console.log("Using cached audio from IndexedDB");
+    return cached;
+  }
+
   try {
     const response = await ai.models.generateContent({
       model: "gemini-2.5-flash-preview-tts",
@@ -19,6 +73,7 @@ export async function generateSpeech(text: string): Promise<string | null> {
 
     const base64Audio = response.candidates?.[0]?.content?.parts?.[0]?.inlineData?.data;
     if (base64Audio) {
+      await cacheAudio(text, base64Audio);
       return base64Audio;
     }
     return null;

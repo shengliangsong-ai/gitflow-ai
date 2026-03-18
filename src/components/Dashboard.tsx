@@ -3,7 +3,7 @@ import { User } from 'firebase/auth';
 import { collection, onSnapshot, query, addDoc, updateDoc, doc, serverTimestamp, getDocs } from 'firebase/firestore';
 import { db } from '../firebase';
 import { Branch, PullRequest } from '../types';
-import { GitBranch, GitPullRequest, GitMerge, Plus, RefreshCw, AlertCircle, CheckCircle2, Clock, Play } from 'lucide-react';
+import { GitBranch, GitPullRequest, GitMerge, Plus, RefreshCw, AlertCircle, CheckCircle2, Clock, Play, Zap } from 'lucide-react';
 import CreatePRModal from './CreatePRModal';
 
 interface DashboardProps {
@@ -62,13 +62,25 @@ export default function Dashboard({ user }: DashboardProps) {
 
   const processPR = async (pr: PullRequest) => {
     try {
-      // 1. Update status to testing
+      // 0. Update status to analyzing
       await updateDoc(doc(db, 'pullRequests', pr.id), {
         status: 'testing',
-        logs: [...pr.logs, 'Starting AI tests...']
+        logs: [...pr.logs, 'Starting Semantic Intent Analysis...']
       });
 
-      // 2. Call backend to run tests
+      const intentRes = await fetch('/api/ai/analyze-intent', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ prTitle: pr.title, files: JSON.parse(pr.files || '[]') })
+      });
+      const intentData = await intentRes.json();
+
+      await updateDoc(doc(db, 'pullRequests', pr.id), {
+        semanticAnalysis: intentData,
+        logs: [...pr.logs, 'Starting Semantic Intent Analysis...', 'Semantic Intent Analysis complete. Starting AI tests...']
+      });
+
+      // 1. Call backend to run tests
       const testRes = await fetch('/api/ai/run-tests', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -79,17 +91,17 @@ export default function Dashboard({ user }: DashboardProps) {
       if (!testData.success) {
         await updateDoc(doc(db, 'pullRequests', pr.id), {
           status: 'failed',
-          logs: [...pr.logs, 'Starting AI tests...', ...testData.logs, 'Tests failed.']
+          logs: [...pr.logs, 'Starting Semantic Intent Analysis...', 'Semantic Intent Analysis complete. Starting AI tests...', ...testData.logs, 'Tests failed.']
         });
         return;
       }
 
       await updateDoc(doc(db, 'pullRequests', pr.id), {
         status: 'conflict',
-        logs: [...pr.logs, 'Starting AI tests...', ...testData.logs, 'Tests passed. Checking for conflicts...', 'Conflict detected!']
+        logs: [...pr.logs, 'Starting Semantic Intent Analysis...', 'Semantic Intent Analysis complete. Starting AI tests...', ...testData.logs, 'Tests passed. Checking for conflicts...', 'Conflict detected!']
       });
 
-      // 3. Call backend to resolve conflicts
+      // 2. Call backend to resolve conflicts
       const resolveRes = await fetch('/api/ai/resolve-conflict', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -97,10 +109,10 @@ export default function Dashboard({ user }: DashboardProps) {
       });
       const resolveData = await resolveRes.json();
 
-      // 4. Update status to merged
+      // 3. Update status to merged
       await updateDoc(doc(db, 'pullRequests', pr.id), {
         status: 'merged',
-        logs: [...pr.logs, 'Starting AI tests...', ...testData.logs, 'Tests passed. Checking for conflicts...', 'Conflict detected!', ...resolveData.logs, 'AI successfully resolved conflicts and merged PR.'],
+        logs: [...pr.logs, 'Starting Semantic Intent Analysis...', 'Semantic Intent Analysis complete. Starting AI tests...', ...testData.logs, 'Tests passed. Checking for conflicts...', 'Conflict detected!', ...resolveData.logs, 'AI successfully resolved conflicts and merged PR.'],
         files: JSON.stringify(resolveData.resolvedFiles || [])
       });
 
@@ -318,6 +330,46 @@ export default function Dashboard({ user }: DashboardProps) {
                     </div>
                   </div>
                   
+                  {pr.semanticAnalysis && (
+                    <div className="mt-4 bg-zinc-900 rounded-lg p-3 border border-zinc-800">
+                      <div className="flex items-center justify-between mb-2">
+                        <div className="text-xs font-semibold text-indigo-400 uppercase tracking-wider flex items-center gap-1.5">
+                          <Zap className="w-3.5 h-3.5" />
+                          Semantic Intent Analysis
+                        </div>
+                        <span className={`text-[10px] uppercase tracking-wider px-1.5 py-0.5 rounded border ${
+                          pr.semanticAnalysis.riskLevel === 'high' ? 'text-red-400 border-red-500/20 bg-red-500/10' :
+                          pr.semanticAnalysis.riskLevel === 'medium' ? 'text-amber-400 border-amber-500/20 bg-amber-500/10' :
+                          'text-emerald-400 border-emerald-500/20 bg-emerald-500/10'
+                        }`}>
+                          Risk: {pr.semanticAnalysis.riskLevel}
+                        </span>
+                      </div>
+                      <p className="text-sm text-zinc-300 mb-3">{pr.semanticAnalysis.intentSummary}</p>
+                      
+                      <div className="grid grid-cols-2 gap-4">
+                        <div>
+                          <div className="text-[10px] font-semibold text-zinc-500 uppercase tracking-wider mb-1">Affected Systems</div>
+                          <div className="flex flex-wrap gap-1">
+                            {pr.semanticAnalysis.affectedSystems.map((sys, i) => (
+                              <span key={i} className="text-[10px] px-1.5 py-0.5 bg-zinc-800 text-zinc-300 rounded border border-zinc-700">{sys}</span>
+                            ))}
+                          </div>
+                        </div>
+                        <div>
+                          <div className="text-[10px] font-semibold text-zinc-500 uppercase tracking-wider mb-1">Logical Conflicts</div>
+                          <ul className="list-disc pl-3 text-xs text-zinc-400 space-y-0.5">
+                            {pr.semanticAnalysis.logicalConflicts.length > 0 ? (
+                              pr.semanticAnalysis.logicalConflicts.map((conf, i) => <li key={i}>{conf}</li>)
+                            ) : (
+                              <li className="text-emerald-400/70 list-none">None detected</li>
+                            )}
+                          </ul>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+
                   {pr.logs && pr.logs.length > 0 && (
                     <div className="mt-4 bg-zinc-900 rounded-lg p-3 border border-zinc-800">
                       <div className="text-xs font-semibold text-zinc-500 mb-2 uppercase tracking-wider">AI Agent Logs</div>

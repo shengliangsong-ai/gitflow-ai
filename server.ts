@@ -51,6 +51,42 @@ Do not include any markdown formatting like \`\`\`json in your response. Just re
     }
   });
 
+  app.post("/api/ai/analyze-intent", async (req, res) => {
+    try {
+      const { prTitle, files } = req.body;
+      const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
+
+      const prompt = `
+You are an expert AI Semantic Engine.
+Analyze the intent of the following pull request titled "${prTitle}".
+Here are the files:
+${JSON.stringify(files, null, 2)}
+
+Provide a semantic analysis of the changes. Return a JSON object with this exact structure:
+{
+  "intentSummary": "A short summary of the semantic intent",
+  "riskLevel": "high" | "medium" | "low",
+  "affectedSystems": ["system1", "system2"],
+  "logicalConflicts": ["potential conflict 1", "potential conflict 2"]
+}
+`;
+
+      const response = await ai.models.generateContent({
+        model: "gemini-3.1-pro-preview",
+        contents: prompt,
+        config: {
+          responseMimeType: "application/json",
+        }
+      });
+
+      const result = JSON.parse(response.text || "{}");
+      res.json(result);
+    } catch (error: any) {
+      console.error("Error analyzing intent:", error);
+      res.status(500).json({ error: error.message });
+    }
+  });
+
   app.post("/api/ai/run-tests", async (req, res) => {
     try {
       const { prTitle, files } = req.body;

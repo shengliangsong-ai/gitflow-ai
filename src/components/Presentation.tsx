@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Presentation as PresentationIcon, ChevronRight, ChevronLeft, Play, Award, Zap, GitMerge, Terminal, StopCircle, Loader2, Sparkles } from 'lucide-react';
+import { Presentation as PresentationIcon, ChevronRight, ChevronLeft, Play, Award, Zap, GitMerge, Terminal, StopCircle, Loader2, Sparkles, Clock, CheckCircle2 } from 'lucide-react';
 import { generateSpeech, playBase64Pcm } from '../services/tts';
 
 const slides = [
@@ -71,6 +71,59 @@ const slides = [
   },
   {
     id: 4,
+    title: "Semantic Orchestration Layer",
+    icon: <Sparkles className="w-12 h-12 text-purple-400" />,
+    speechText: "We've taken it a step further with our Semantic Orchestration Layer powered by Gemini 3 point 1 Pro. Instead of blindly testing code, our A I performs Semantic Intent Analysis to understand what the code actually does. It calculates risk levels, detects logical conflicts across files, and allows developers to orchestrate the queue directly from the C L I. We even support Advanced Merge Topologies like N-Way Star Merge and Cascading Rebase. It's not just a queue; it's an intelligent traffic controller for your codebase.",
+    content: (
+      <div className="space-y-6 text-xl text-zinc-300">
+        <p>Moving beyond basic CI/CD with <strong>Semantic Intent Analysis</strong> powered by Gemini 3.1 Pro.</p>
+        <ul className="space-y-6">
+          <li className="flex items-start gap-4">
+            <div className="bg-purple-500/20 p-2 rounded-lg mt-1"><Sparkles className="w-5 h-5 text-purple-400" /></div>
+            <div><strong>Intent Analysis:</strong> AI understands the <em>purpose</em> of changes, not just the syntax.</div>
+          </li>
+          <li className="flex items-start gap-4">
+            <div className="bg-purple-500/20 p-2 rounded-lg mt-1"><GitMerge className="w-5 h-5 text-purple-400" /></div>
+            <div><strong>Advanced Topologies:</strong> Supports N-Way Star Merge and Cascading Rebase.</div>
+          </li>
+          <li className="flex items-start gap-4">
+            <div className="bg-purple-500/20 p-2 rounded-lg mt-1"><Terminal className="w-5 h-5 text-purple-400" /></div>
+            <div><strong>CLI Orchestration:</strong> Full control via <code className="text-purple-300 text-sm">git-ai queue [pause|reorder|group]</code>.</div>
+          </li>
+        </ul>
+      </div>
+    )
+  },
+  {
+    id: 5,
+    title: "Verifiable Trust: Built-in Benchmarks",
+    icon: <Terminal className="w-12 h-12 text-emerald-400" />,
+    speechText: "But how do you know this actually works? We believe in verifiable trust. Anyone can clone our GitHub repository and simply type git-ai benchmark. This triggers a suite of automated self-tests that simulate complex, real-world merge conflicts—from simple line collisions to deep semantic refactoring conflicts. It runs our A I resolution engine against these scenarios, proving our accuracy and reliability right on your local machine. You don't have to take our word for it; you can prove it yourself.",
+    content: (
+      <div className="space-y-6 text-xl text-zinc-300">
+        <p>Don't just take our word for it. Prove it yourself with <strong>Built-in Benchmarks</strong>.</p>
+        <div className="bg-zinc-950 p-6 rounded-xl border border-zinc-800 font-mono text-emerald-400 text-lg my-6">
+          $ git-ai benchmark
+        </div>
+        <ul className="space-y-4">
+          <li className="flex items-start gap-4">
+            <div className="bg-emerald-500/20 p-2 rounded-lg mt-1"><CheckCircle2 className="w-5 h-5 text-emerald-400" /></div>
+            <div><strong>Automated Self-Tests:</strong> Simulates complex, real-world merge conflicts locally.</div>
+          </li>
+          <li className="flex items-start gap-4">
+            <div className="bg-emerald-500/20 p-2 rounded-lg mt-1"><CheckCircle2 className="w-5 h-5 text-emerald-400" /></div>
+            <div><strong>Semantic Verification:</strong> Tests everything from line collisions to deep refactoring.</div>
+          </li>
+          <li className="flex items-start gap-4">
+            <div className="bg-emerald-500/20 p-2 rounded-lg mt-1"><CheckCircle2 className="w-5 h-5 text-emerald-400" /></div>
+            <div><strong>Open Source:</strong> Clone the repo and verify our AI accuracy on your own machine.</div>
+          </li>
+        </ul>
+      </div>
+    )
+  },
+  {
+    id: 6,
     title: "Why This Wins",
     icon: <PresentationIcon className="w-12 h-12 text-indigo-400" />,
     speechText: "Why does this win? Because we didn't just build a dashboard; we built a workflow integration. There is zero friction: developers don't need to learn a new U I, they just type git-ai instead of git. We have real-time sync using Firebase Firestore to ensure the C L I and Web Dashboard are always perfectly in sync. And we are data-driven, with GitLab Analytics S D K integration proving we are thinking about enterprise adoption from day one. Thank you, Judges!",
@@ -95,6 +148,7 @@ export default function Presentation() {
   const [currentSlide, setCurrentSlide] = useState(0);
   const [isPlayingAI, setIsPlayingAI] = useState(false);
   const [isGenerating, setIsGenerating] = useState(false);
+  const [elapsedSeconds, setElapsedSeconds] = useState(0);
   const playRef = useRef(false);
   const abortControllerRef = useRef<AbortController | null>(null);
 
@@ -150,6 +204,35 @@ export default function Presentation() {
     };
   }, [currentSlide, isPlayingAI]);
 
+  useEffect(() => {
+    let interval: NodeJS.Timeout;
+    if (isPlayingAI) {
+      interval = setInterval(() => {
+        setElapsedSeconds(prev => prev + 1);
+      }, 1000);
+    }
+    return () => clearInterval(interval);
+  }, [isPlayingAI]);
+
+  useEffect(() => {
+    let isMounted = true;
+    
+    // Preload audio sequentially in the background
+    const preloadAudio = async () => {
+      for (const slide of slides) {
+        if (!isMounted) break;
+        // This will fetch and cache in IndexedDB if not already cached
+        await generateSpeech(slide.speechText);
+      }
+    };
+    
+    preloadAudio();
+    
+    return () => {
+      isMounted = false;
+    };
+  }, []);
+
   const toggleAIPresentation = () => {
     if (isPlayingAI) {
       setIsPlayingAI(false);
@@ -162,8 +245,15 @@ export default function Presentation() {
       playRef.current = true;
       if (currentSlide === slides.length - 1) {
         setCurrentSlide(0);
+        setElapsedSeconds(0);
       }
     }
+  };
+
+  const formatTime = (seconds: number) => {
+    const m = Math.floor(seconds / 60);
+    const s = seconds % 60;
+    return `${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
   };
 
   const nextSlide = () => {
@@ -248,6 +338,23 @@ export default function Presentation() {
             {slides[currentSlide].content}
           </div>
         </div>
+
+        {(isPlayingAI || elapsedSeconds > 0) && (
+          <div className="fixed bottom-8 right-8 bg-zinc-900/95 backdrop-blur-md border border-zinc-700 text-white px-6 py-4 rounded-2xl font-mono text-3xl shadow-[0_0_40px_rgba(0,0,0,0.5)] flex items-center gap-4 z-50 transition-all duration-300">
+            <Clock className={`w-8 h-8 ${isPlayingAI ? 'animate-pulse' : ''} ${elapsedSeconds >= 180 ? 'text-red-400' : 'text-indigo-400'}`} />
+            <span className={elapsedSeconds >= 180 ? 'text-red-400 font-bold' : 'font-semibold'}>
+              {formatTime(elapsedSeconds)}
+            </span>
+            {!isPlayingAI && (
+              <button 
+                onClick={() => setElapsedSeconds(0)}
+                className="ml-2 text-sm font-sans text-zinc-400 hover:text-white bg-zinc-800 hover:bg-zinc-700 px-3 py-1.5 rounded-lg transition-colors"
+              >
+                Reset
+              </button>
+            )}
+          </div>
+        )}
 
         <div className="bg-zinc-950 border-t border-zinc-800 p-6 flex justify-between items-center">
           <button
