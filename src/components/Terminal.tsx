@@ -135,44 +135,23 @@ Processing: ${processing}`);
 
         case 'benchmark':
         case 'benchmarks':
-          addHistory('output', 'Initializing AI GitFlow Benchmark Suite...');
+          addHistory('output', 'Connecting to GitLab API for real benchmark...');
           
-          setTimeout(() => addHistory('output', `
-[1/4] Simulating simple line collision...
-  File: src/utils/math.ts
-  Branch A: return a + b + c;
-  Branch B: return a + b + d;
-  AI Resolution: return a + b + c + d;
-  Status: [PASS]`), 1500);
+          const eventSource = new EventSource('/api/gitlab/benchmark');
           
-          setTimeout(() => addHistory('output', `
-[2/4] Simulating semantic refactoring conflict...
-  File: src/components/Button.tsx
-  Branch A: Renamed 'onClick' prop to 'onPress'
-  Branch B: Added new button using 'onClick={handleClick}'
-  AI Resolution: Updated Branch B's new button to use 'onPress={handleClick}'
-  Status: [PASS]`), 3500);
+          eventSource.onmessage = (event) => {
+            const data = JSON.parse(event.data);
+            if (data.message === "DONE") {
+              eventSource.close();
+            } else {
+              addHistory('output', data.message);
+            }
+          };
           
-          setTimeout(() => addHistory('output', `
-[3/4] Simulating N-Way Star Merge topology...
-  Branches: feature-auth, feature-ui, hotfix-db
-  Conflict: All 3 branches modified 'src/config.ts'
-  AI Resolution: Merged all 3 changes into a unified config object without syntax errors.
-  Status: [PASS]`), 6000);
-          
-          setTimeout(() => addHistory('output', `
-[4/4] Simulating Cascading Rebase failure recovery...
-  Chain: PR-102 -> PR-103 -> PR-104
-  Event: PR-102 was force-pushed.
-  AI Resolution: Automatically rebased PR-103 onto new PR-102, then PR-104 onto new PR-103.
-  Status: [PASS]`), 8500);
-          
-          setTimeout(() => addHistory('output', `
-==================================================
-Benchmark complete. All 42 self-tests passed.
-AI resolution accuracy: 99.8%
-Time elapsed: 8.5s
-==================================================`), 10000);
+          eventSource.onerror = (error) => {
+            addHistory('error', 'Connection to benchmark server failed or ended.');
+            eventSource.close();
+          };
           break;
 
         default:
