@@ -8,12 +8,13 @@ import Roadmap from './components/Roadmap';
 import LocalCLI from './components/LocalCLI';
 import Architecture from './components/Architecture';
 import Presentation from './components/Presentation';
+import BenchmarkDoc from './components/BenchmarkDoc';
 import { trackPageView, identifyUser } from './analytics';
 
 export default function App() {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState<'dashboard' | 'terminal' | 'roadmap' | 'cli' | 'architecture' | 'presentation'>('dashboard');
+  const [activeTab, setActiveTab] = useState<'dashboard' | 'terminal' | 'roadmap' | 'cli' | 'architecture' | 'presentation' | 'benchmark'>('dashboard');
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
@@ -109,6 +110,13 @@ export default function App() {
                   Architecture
                 </button>
                 <button
+                  onClick={() => setActiveTab('benchmark')}
+                  className={`flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium transition-colors ${activeTab === 'benchmark' ? 'bg-zinc-800 text-white' : 'text-zinc-400 hover:text-white hover:bg-zinc-800/50'}`}
+                >
+                  <FileText className="w-4 h-4" />
+                  Benchmark
+                </button>
+                <button
                   onClick={() => setActiveTab('presentation')}
                   className={`flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium transition-colors ${activeTab === 'presentation' ? 'bg-zinc-800 text-white' : 'text-zinc-400 hover:text-white hover:bg-zinc-800/50'}`}
                 >
@@ -141,6 +149,7 @@ export default function App() {
         {activeTab === 'roadmap' && <Roadmap />}
         {activeTab === 'cli' && <LocalCLI />}
         {activeTab === 'architecture' && <Architecture />}
+        {activeTab === 'benchmark' && <BenchmarkDoc />}
         {activeTab === 'presentation' && <Presentation />}
       </main>
     </div>

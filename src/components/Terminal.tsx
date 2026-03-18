@@ -1,8 +1,9 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { collection, query, where, getDocs, updateDoc, doc, setDoc, onSnapshot } from 'firebase/firestore';
 import { db } from '../firebase';
-import { Terminal as TerminalIcon } from 'lucide-react';
+import { Terminal as TerminalIcon, GitBranch } from 'lucide-react';
 import { trackCliCommand } from '../analytics';
+import GitGraphView from './GitGraphView';
 
 interface HistoryItem {
   id: string;
@@ -17,6 +18,7 @@ export default function Terminal() {
     { id: '2', type: 'output', content: 'Type "help" for a list of commands.' }
   ]);
   const [isPaused, setIsPaused] = useState(false);
+  const [projectId, setProjectId] = useState<string | null>(null);
   const bottomRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -141,7 +143,9 @@ Processing: ${processing}`);
           
           eventSource.onmessage = (event) => {
             const data = JSON.parse(event.data);
-            if (data.message === "DONE") {
+            if (data.type === 'projectId') {
+              setProjectId(data.projectId);
+            } else if (data.message === "DONE") {
               eventSource.close();
             } else {
               addHistory('output', data.message);
@@ -163,46 +167,58 @@ Processing: ${processing}`);
   };
 
   return (
-    <div className="bg-zinc-950 rounded-2xl border border-zinc-800 overflow-hidden flex flex-col h-[600px] font-mono shadow-2xl">
-      <div className="bg-zinc-900 border-b border-zinc-800 px-4 py-3 flex items-center gap-2">
-        <TerminalIcon className="w-5 h-5 text-indigo-400" />
-        <span className="text-sm font-semibold text-zinc-300">AI GitFlow CLI</span>
-        {isPaused && (
-          <span className="ml-auto text-xs px-2 py-1 bg-red-500/10 text-red-400 rounded-full border border-red-500/20">
-            SYSTEM PAUSED
-          </span>
-        )}
-      </div>
-      
-      <div className="flex-1 overflow-y-auto p-4 space-y-2 text-sm">
-        {history.map((item) => (
-          <div 
-            key={item.id} 
-            className={`whitespace-pre-wrap ${
-              item.type === 'input' ? 'text-indigo-300' : 
-              item.type === 'error' ? 'text-red-400' : 
-              'text-zinc-300'
-            }`}
-          >
-            {item.content}
-          </div>
-        ))}
-        <div ref={bottomRef} />
+    <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 min-h-[600px] lg:h-[600px]">
+      <div className="bg-zinc-950 rounded-2xl border border-zinc-800 overflow-hidden flex flex-col h-[600px] lg:h-auto font-mono shadow-2xl">
+        <div className="bg-zinc-900 border-b border-zinc-800 px-4 py-3 flex items-center gap-2">
+          <TerminalIcon className="w-5 h-5 text-indigo-400" />
+          <span className="text-sm font-semibold text-zinc-300">AI GitFlow CLI</span>
+          {isPaused && (
+            <span className="ml-auto text-xs px-2 py-1 bg-red-500/10 text-red-400 rounded-full border border-red-500/20">
+              SYSTEM PAUSED
+            </span>
+          )}
+        </div>
+        
+        <div className="flex-1 overflow-y-auto p-4 space-y-2 text-sm">
+          {history.map((item) => (
+            <div 
+              key={item.id} 
+              className={`whitespace-pre-wrap ${
+                item.type === 'input' ? 'text-indigo-300' : 
+                item.type === 'error' ? 'text-red-400' : 
+                'text-zinc-300'
+              }`}
+            >
+              {item.content}
+            </div>
+          ))}
+          <div ref={bottomRef} />
+        </div>
+
+        <form onSubmit={handleCommand} className="border-t border-zinc-800 p-4 bg-zinc-900/50 flex items-center gap-2">
+          <span className="text-indigo-400 font-bold">$</span>
+          <input
+            type="text"
+            value={input}
+            onChange={(e) => setInput(e.target.value)}
+            className="flex-1 bg-transparent border-none outline-none text-zinc-100 placeholder-zinc-600"
+            placeholder="Enter command..."
+            autoFocus
+            spellCheck={false}
+            autoComplete="off"
+          />
+        </form>
       </div>
 
-      <form onSubmit={handleCommand} className="border-t border-zinc-800 p-4 bg-zinc-900/50 flex items-center gap-2">
-        <span className="text-indigo-400 font-bold">$</span>
-        <input
-          type="text"
-          value={input}
-          onChange={(e) => setInput(e.target.value)}
-          className="flex-1 bg-transparent border-none outline-none text-zinc-100 placeholder-zinc-600"
-          placeholder="Enter command..."
-          autoFocus
-          spellCheck={false}
-          autoComplete="off"
-        />
-      </form>
+      <div className="bg-zinc-950 rounded-2xl border border-zinc-800 overflow-hidden flex flex-col h-[600px] lg:h-auto font-mono shadow-2xl">
+        <div className="bg-zinc-900 border-b border-zinc-800 px-4 py-3 flex items-center gap-2">
+          <GitBranch className="w-5 h-5 text-emerald-400" />
+          <span className="text-sm font-semibold text-zinc-300">Live Git Graph</span>
+        </div>
+        <div className="flex-1 overflow-hidden relative">
+          <GitGraphView projectId={projectId} />
+        </div>
+      </div>
     </div>
   );
 }
