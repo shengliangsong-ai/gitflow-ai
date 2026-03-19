@@ -9,9 +9,10 @@ interface CreatePRModalProps {
 }
 
 export default function CreatePRModal({ branches, onClose, onSubmit }: CreatePRModalProps) {
+  const primaryBranch = branches.find(b => b.type === 'primary')?.name || 'main';
   const [title, setTitle] = useState('');
   const [sourceBranch, setSourceBranch] = useState('');
-  const [targetBranch, setTargetBranch] = useState('primary');
+  const [targetBranch, setTargetBranch] = useState(primaryBranch);
   const [files, setFiles] = useState('[{"name": "src/main.ts", "content": "console.log(\\"Hello\\");"}]');
 
   const handleSubmit = (e: React.FormEvent) => {

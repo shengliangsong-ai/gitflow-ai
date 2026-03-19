@@ -15,34 +15,115 @@ export default function Dashboard({ user }: DashboardProps) {
   const [pullRequests, setPullRequests] = useState<PullRequest[]>([]);
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [isSyncing, setIsSyncing] = useState(false);
+  
+  const [projects, setProjects] = useState<any[]>([]);
+  const [selectedProjectId, setSelectedProjectId] = useState<string>('');
+  const [isCreatingProject, setIsCreatingProject] = useState(false);
+  const [newProjectName, setNewProjectName] = useState('');
+  const [isLoadingBranches, setIsLoadingBranches] = useState(false);
 
   useEffect(() => {
-    const branchesUnsub = onSnapshot(collection(db, 'branches'), async (snapshot) => {
-      if (snapshot.empty) {
-        // Seed initial branches
-        const initialBranches = [
-          { name: 'primary', type: 'primary', status: 'active' },
-          { name: 'release-v1.0', type: 'release', status: 'active' },
-          { name: 'feat/ai-merge', type: 'project', status: 'active', teamId: 'team-alpha' },
-          { name: 'fix/auth-bug', type: 'project', status: 'active', teamId: 'team-beta' },
-        ];
-        for (const b of initialBranches) {
-          await addDoc(collection(db, 'branches'), b);
+    // Fetch projects
+    const fetchProjects = async () => {
+      try {
+        const res = await fetch('/api/gitlab/projects');
+        if (res.ok) {
+          const data = await res.json();
+          setProjects(data);
+          const gitflowProject = data.find((p: any) => p.name === 'gitflow-ai');
+          if (gitflowProject) {
+            setSelectedProjectId(gitflowProject.id.toString());
+          } else {
+            // Auto create gitflow-ai if it doesn't exist
+            try {
+              const createRes = await fetch('/api/gitlab/projects', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ name: 'gitflow-ai' })
+              });
+              if (createRes.ok) {
+                const newProject = await createRes.json();
+                setProjects([...data, newProject]);
+                setSelectedProjectId(newProject.id.toString());
+              } else if (data.length > 0) {
+                setSelectedProjectId(data[0].id.toString());
+              }
+            } catch (createErr) {
+              console.error("Failed to auto-create gitflow-ai", createErr);
+              if (data.length > 0) {
+                setSelectedProjectId(data[0].id.toString());
+              }
+            }
+          }
         }
-      } else {
-        setBranches(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Branch)));
+      } catch (error) {
+        console.error("Failed to fetch projects", error);
       }
-    });
+    };
+    fetchProjects();
 
     const prsUnsub = onSnapshot(collection(db, 'pullRequests'), (snapshot) => {
       setPullRequests(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as PullRequest)));
     });
 
     return () => {
-      branchesUnsub();
       prsUnsub();
     };
   }, []);
+
+  useEffect(() => {
+    if (!selectedProjectId) return;
+    
+    const fetchBranches = async () => {
+      setIsLoadingBranches(true);
+      try {
+        const res = await fetch(`/api/gitlab/projects/${selectedProjectId}/branches`);
+        if (res.ok) {
+          const data = await res.json();
+          const mappedBranches: Branch[] = data.map((b: any) => {
+            let type: 'primary' | 'release' | 'project' = 'project';
+            if (b.name === 'main' || b.name === 'master') type = 'primary';
+            else if (b.name.startsWith('release')) type = 'release';
+            
+            return {
+              id: b.name,
+              name: b.name,
+              type,
+              status: 'active'
+            };
+          });
+          setBranches(mappedBranches);
+        }
+      } catch (error) {
+        console.error("Failed to fetch branches", error);
+      } finally {
+        setIsLoadingBranches(false);
+      }
+    };
+    fetchBranches();
+  }, [selectedProjectId]);
+
+  const handleCreateProject = async () => {
+    if (!newProjectName.trim()) return;
+    setIsCreatingProject(true);
+    try {
+      const res = await fetch('/api/gitlab/projects', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name: newProjectName })
+      });
+      if (res.ok) {
+        const newProject = await res.json();
+        setProjects([...projects, newProject]);
+        setSelectedProjectId(newProject.id.toString());
+        setNewProjectName('');
+      }
+    } catch (error) {
+      console.error("Failed to create project", error);
+    } finally {
+      setIsCreatingProject(false);
+    }
+  };
 
   const handleCreatePR = async (data: Partial<PullRequest>) => {
     try {
@@ -131,13 +212,14 @@ export default function Dashboard({ user }: DashboardProps) {
       // Simulate the 2-week sync
       // 1. Get all active project branches
       const activeProjectBranches = branches.filter(b => b.type === 'project' && b.status === 'active');
+      const primaryBranch = branches.find(b => b.type === 'primary')?.name || 'main';
       
       // 2. Create a "Sync PR" for each
       for (const branch of activeProjectBranches) {
         const prRef = await addDoc(collection(db, 'pullRequests'), {
-          title: `Bi-Weekly Sync: ${branch.name} to primary`,
+          title: `Bi-Weekly Sync: ${branch.name} to ${primaryBranch}`,
           sourceBranch: branch.name,
-          targetBranch: 'primary',
+          targetBranch: primaryBranch,
           authorId: 'ai-system',
           status: 'merge_queue',
           priority: 'high',
@@ -149,7 +231,7 @@ export default function Dashboard({ user }: DashboardProps) {
         // Simulate processing
         await updateDoc(doc(db, 'pullRequests', prRef.id), {
           status: 'merged',
-          logs: ['Initiated bi-weekly auto-sync.', 'AI resolved any conflicts.', 'Merged successfully.', 'Rebased new project branch from primary.']
+          logs: ['Initiated bi-weekly auto-sync.', 'AI resolved any conflicts.', 'Merged successfully.', `Rebased new project branch from ${primaryBranch}.`]
         });
       }
       
@@ -214,33 +296,69 @@ export default function Dashboard({ user }: DashboardProps) {
       {/* Left Column: Branches & Actions */}
       <div className="space-y-6">
         <div className="bg-zinc-900 rounded-2xl border border-zinc-800 p-6">
-          <div className="flex items-center justify-between mb-6">
+          <div className="flex items-center justify-between mb-4">
             <h2 className="text-lg font-semibold flex items-center gap-2">
               <GitBranch className="w-5 h-5 text-indigo-400" />
               Repository Branches
             </h2>
           </div>
           
+          <div className="mb-6 space-y-3">
+            <div>
+              <label className="block text-xs font-semibold text-zinc-500 uppercase tracking-wider mb-2">Select Repository</label>
+              <select 
+                value={selectedProjectId}
+                onChange={(e) => setSelectedProjectId(e.target.value)}
+                className="w-full bg-zinc-950 border border-zinc-800 rounded-lg px-3 py-2 text-sm text-zinc-300 focus:outline-none focus:border-indigo-500"
+              >
+                {projects.map(p => (
+                  <option key={p.id} value={p.id}>{p.name}</option>
+                ))}
+              </select>
+            </div>
+            
+            <div className="flex gap-2">
+              <input 
+                type="text" 
+                placeholder="New repo name..." 
+                value={newProjectName}
+                onChange={(e) => setNewProjectName(e.target.value)}
+                className="flex-1 bg-zinc-950 border border-zinc-800 rounded-lg px-3 py-2 text-sm text-zinc-300 focus:outline-none focus:border-indigo-500"
+              />
+              <button 
+                onClick={handleCreateProject}
+                disabled={isCreatingProject || !newProjectName.trim()}
+                className="px-3 py-2 bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 text-white rounded-lg text-sm font-medium transition-colors"
+              >
+                {isCreatingProject ? 'Creating...' : 'Create'}
+              </button>
+            </div>
+          </div>
+          
           <div className="space-y-4">
-            {['primary', 'release', 'project'].map(type => (
-              <div key={type}>
-                <h3 className="text-xs font-semibold text-zinc-500 uppercase tracking-wider mb-2">{type} Branches</h3>
-                <div className="space-y-2">
-                  {branches.filter(b => b.type === type).length === 0 ? (
-                    <p className="text-sm text-zinc-600 italic">No {type} branches</p>
-                  ) : (
-                    branches.filter(b => b.type === type).map(branch => (
-                      <div key={branch.id} className="flex items-center justify-between p-3 bg-zinc-950 rounded-xl border border-zinc-800/50">
-                        <span className="font-mono text-sm">{branch.name}</span>
-                        <span className={`text-xs px-2 py-1 rounded-full ${branch.status === 'active' ? 'bg-emerald-500/10 text-emerald-400' : 'bg-zinc-800 text-zinc-400'}`}>
-                          {branch.status}
-                        </span>
-                      </div>
-                    ))
-                  )}
+            {isLoadingBranches ? (
+              <div className="text-center py-4 text-zinc-500 text-sm">Loading branches...</div>
+            ) : (
+              ['primary', 'release', 'project'].map(type => (
+                <div key={type}>
+                  <h3 className="text-xs font-semibold text-zinc-500 uppercase tracking-wider mb-2">{type} Branches</h3>
+                  <div className="space-y-2">
+                    {branches.filter(b => b.type === type).length === 0 ? (
+                      <p className="text-sm text-zinc-600 italic">No {type} branches</p>
+                    ) : (
+                      branches.filter(b => b.type === type).map(branch => (
+                        <div key={branch.id} className="flex items-center justify-between p-3 bg-zinc-950 rounded-xl border border-zinc-800/50">
+                          <span className="font-mono text-sm">{branch.name}</span>
+                          <span className={`text-xs px-2 py-1 rounded-full ${branch.status === 'active' ? 'bg-emerald-500/10 text-emerald-400' : 'bg-zinc-800 text-zinc-400'}`}>
+                            {branch.status}
+                          </span>
+                        </div>
+                      ))
+                    )}
+                  </div>
                 </div>
-              </div>
-            ))}
+              ))
+            )}
           </div>
         </div>
 

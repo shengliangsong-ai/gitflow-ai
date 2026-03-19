@@ -88,6 +88,59 @@ async function startServer() {
     }));
   };
 
+  app.get("/api/gitlab/projects", async (req, res) => {
+    const token = process.env.GITLAB_TOKEN;
+    if (!token) return res.status(401).json({ error: "Missing GITLAB_TOKEN" });
+    try {
+      const projectsRes = await fetch(`https://gitlab.com/api/v4/projects?owned=true&per_page=100`, {
+        headers: { "PRIVATE-TOKEN": token }
+      });
+      if (!projectsRes.ok) throw new Error(`Failed to fetch projects: ${await projectsRes.text()}`);
+      const projects = await projectsRes.json();
+      res.json(projects);
+    } catch (err: any) {
+      res.status(500).json({ error: err.message });
+    }
+  });
+
+  app.post("/api/gitlab/projects", async (req, res) => {
+    const token = process.env.GITLAB_TOKEN;
+    if (!token) return res.status(401).json({ error: "Missing GITLAB_TOKEN" });
+    try {
+      const { name, description } = req.body;
+      const createRes = await fetch(`https://gitlab.com/api/v4/projects`, {
+        method: "POST",
+        headers: { "PRIVATE-TOKEN": token, "Content-Type": "application/json" },
+        body: JSON.stringify({
+          name,
+          description: description || "Created via AI Studio",
+          visibility: "private",
+          initialize_with_readme: true
+        })
+      });
+      if (!createRes.ok) throw new Error(`Failed to create project: ${await createRes.text()}`);
+      const createData = await createRes.json();
+      res.json(createData);
+    } catch (err: any) {
+      res.status(500).json({ error: err.message });
+    }
+  });
+
+  app.get("/api/gitlab/projects/:projectId/branches", async (req, res) => {
+    const token = process.env.GITLAB_TOKEN;
+    if (!token) return res.status(401).json({ error: "Missing GITLAB_TOKEN" });
+    try {
+      const branchesRes = await fetch(`https://gitlab.com/api/v4/projects/${req.params.projectId}/repository/branches`, {
+        headers: { "PRIVATE-TOKEN": token }
+      });
+      if (!branchesRes.ok) throw new Error(`Failed to fetch branches: ${await branchesRes.text()}`);
+      const branches = await branchesRes.json();
+      res.json(branches);
+    } catch (err: any) {
+      res.status(500).json({ error: err.message });
+    }
+  });
+
   app.get("/api/gitlab/graph/:projectId", async (req, res) => {
     const token = process.env.GITLAB_TOKEN;
     if (!token) return res.status(401).json({ error: "Missing GITLAB_TOKEN" });
