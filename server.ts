@@ -2,6 +2,10 @@ import express from "express";
 import { createServer as createViteServer } from "vite";
 import { GoogleGenAI } from "@google/genai";
 import path from "path";
+import { exec } from "child_process";
+import util from "util";
+import fs from "fs";
+import os from "os";
 
 async function startServer() {
   const app = express();
@@ -124,6 +128,120 @@ async function startServer() {
       res.json({ commit: commitData, diff: diffData });
     } catch (err: any) {
       res.status(500).json({ error: err.message });
+    }
+  });
+
+  app.get("/api/gitlab/sync-github", async (req, res) => {
+    res.setHeader('Content-Type', 'text/event-stream');
+    res.setHeader('Cache-Control', 'no-cache');
+    res.setHeader('Connection', 'keep-alive');
+    
+    const sendLog = (msg: string) => {
+      res.write(`data: ${JSON.stringify({ message: msg })}\n\n`);
+    };
+
+    const token = process.env.GITLAB_TOKEN;
+    if (!token) {
+      sendLog("ERROR: GITLAB_TOKEN environment variable is missing.");
+      sendLog("DONE");
+      res.end();
+      return;
+    }
+
+    try {
+      sendLog("Starting GitHub to GitLab Sync...");
+      
+      // 1. Create or get GitLab project 'gitflow-ai'
+      sendLog("Checking for existing 'gitflow-ai' project in GitLab...");
+      const searchRes = await fetch(`https://gitlab.com/api/v4/projects?search=gitflow-ai&owned=true`, {
+        headers: { "PRIVATE-TOKEN": token }
+      });
+      const searchData = await searchRes.json();
+      
+      let projectId;
+      let gitlabRepoUrl;
+      
+      const existingProject = searchData.find((p: any) => p.name === "gitflow-ai");
+      if (existingProject) {
+        projectId = existingProject.id;
+        gitlabRepoUrl = existingProject.http_url_to_repo;
+        sendLog(`Found existing project 'gitflow-ai' (ID: ${projectId})`);
+      } else {
+        sendLog("Creating new project 'gitflow-ai' in GitLab...");
+        const createRes = await fetch(`https://gitlab.com/api/v4/projects`, {
+          method: "POST",
+          headers: { "PRIVATE-TOKEN": token, "Content-Type": "application/json" },
+          body: JSON.stringify({
+            name: "gitflow-ai",
+            description: "Synced from GitHub",
+            visibility: "private",
+            initialize_with_readme: false
+          })
+        });
+        if (!createRes.ok) throw new Error(`Failed to create project: ${await createRes.text()}`);
+        const createData = await createRes.json();
+        projectId = createData.id;
+        gitlabRepoUrl = createData.http_url_to_repo;
+        sendLog(`Created new project 'gitflow-ai' (ID: ${projectId})`);
+      }
+
+      res.write(`data: ${JSON.stringify({ type: 'projectId', projectId: projectId.toString() })}\n\n`);
+
+      // 2. Clone GitHub repo and push to GitLab
+      const execPromise = util.promisify(exec);
+
+      const tempDir = fs.mkdtempSync(path.join(os.tmpdir(), 'gitflow-sync-'));
+      sendLog(`Created temporary directory: ${tempDir}`);
+
+      try {
+        const authUrl = gitlabRepoUrl.replace('https://', `https://oauth2:${token}@`);
+        
+        const githubToken = process.env.GITHUB_TOKEN;
+        const githubRepoUrl = githubToken 
+          ? `https://${githubToken}@github.com/shengliangsong-ai/gitflow-ai.git`
+          : `https://github.com/shengliangsong-ai/gitflow-ai.git`;
+        
+        sendLog(`$ git clone <GITLAB_URL> .`);
+        await execPromise(`git clone ${authUrl} .`, { cwd: tempDir });
+        
+        sendLog(`$ git remote add github <GITHUB_URL>`);
+        await execPromise(`git remote add github ${githubRepoUrl}`, { cwd: tempDir });
+        
+        sendLog(`$ git fetch github`);
+        await execPromise(`git fetch github`, { cwd: tempDir });
+
+        const { stdout: branchOut } = await execPromise(`git branch`, { cwd: tempDir });
+        const { stdout: remoteBranchOut } = await execPromise(`git branch -r`, { cwd: tempDir });
+        const githubBranch = remoteBranchOut.includes('github/main') ? 'github/main' : 'github/master';
+
+        if (!branchOut.includes('main') && !branchOut.includes('master')) {
+            sendLog(`$ git checkout -b main ${githubBranch}`);
+            await execPromise(`git checkout -b main ${githubBranch}`, { cwd: tempDir });
+        } else {
+            sendLog(`$ git cherry-pick ..${githubBranch}`);
+            try {
+                await execPromise(`git cherry-pick ..${githubBranch}`, { cwd: tempDir });
+            } catch (cpErr: any) {
+                sendLog(`Cherry-pick had conflicts or no new commits. Aborting cherry-pick.`);
+                await execPromise(`git cherry-pick --abort`, { cwd: tempDir }).catch(() => {});
+            }
+        }
+
+        sendLog(`$ git push origin HEAD:main`);
+        await execPromise(`git push origin HEAD:main`, { cwd: tempDir });
+        
+        sendLog(`Successfully synced commits from GitHub to GitLab!`);
+      } finally {
+        fs.rmSync(tempDir, { recursive: true, force: true });
+        sendLog(`Cleaned up temporary directory.`);
+      }
+
+      sendLog("DONE");
+      res.end();
+    } catch (err: any) {
+      sendLog(`ERROR: ${err.message}`);
+      sendLog("DONE");
+      res.end();
     }
   });
 

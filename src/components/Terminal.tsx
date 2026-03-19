@@ -70,6 +70,29 @@ export default function Terminal({ className = "h-[calc(100vh-8rem)]" }: { class
     };
   };
 
+  const syncGithub = () => {
+    addHistory('output', `Starting GitHub Sync...`);
+    
+    const url = `/api/gitlab/sync-github`;
+    const eventSource = new EventSource(url);
+    
+    eventSource.onmessage = (event) => {
+      const data = JSON.parse(event.data);
+      if (data.type === 'projectId') {
+        setProjectId(data.projectId);
+      } else if (data.message === "DONE") {
+        eventSource.close();
+      } else {
+        addHistory('output', data.message);
+      }
+    };
+    
+    eventSource.onerror = (error) => {
+      addHistory('error', 'Connection to sync server failed or ended.');
+      eventSource.close();
+    };
+  };
+
   const resetDemo = () => {
     setProjectId(null);
     setHistory([
@@ -206,6 +229,12 @@ Processing: ${processing}`);
               className={`px-3 py-1.5 text-white text-xs font-medium rounded-lg transition-colors ${projectId ? 'bg-emerald-600 hover:bg-emerald-700' : 'bg-zinc-700 cursor-not-allowed text-zinc-400'}`}
             >
               Start Phase B (Merge)
+            </button>
+            <button 
+              onClick={syncGithub} 
+              className="px-3 py-1.5 bg-purple-600 hover:bg-purple-700 text-white text-xs font-medium rounded-lg transition-colors ml-2"
+            >
+              Sync GitHub
             </button>
             <button 
               onClick={resetDemo} 
