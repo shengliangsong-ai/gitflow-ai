@@ -11,7 +11,7 @@ interface HistoryItem {
   content: string;
 }
 
-export default function Terminal() {
+export default function Terminal({ className = "h-[calc(100vh-8rem)]" }: { className?: string }) {
   const [input, setInput] = useState('');
   const [history, setHistory] = useState<HistoryItem[]>([
     { id: '1', type: 'output', content: 'AI GitFlow CLI initialized.' },
@@ -37,6 +37,44 @@ export default function Terminal() {
 
   const addHistory = (type: 'input' | 'output' | 'error', content: string) => {
     setHistory(prev => [...prev, { id: Date.now().toString() + Math.random(), type, content }]);
+  };
+
+  const runDemo = (phase: 'A' | 'B') => {
+    addHistory('output', `Starting Demo Phase ${phase}...`);
+    
+    let url = `/api/gitlab/benchmark?phase=${phase}`;
+    if (phase === 'B') {
+      if (!projectId) {
+        addHistory('error', 'Project ID is missing. Run Phase A first.');
+        return;
+      }
+      url += `&projectId=${projectId}`;
+    }
+
+    const eventSource = new EventSource(url);
+    
+    eventSource.onmessage = (event) => {
+      const data = JSON.parse(event.data);
+      if (data.type === 'projectId') {
+        setProjectId(data.projectId);
+      } else if (data.message === "DONE") {
+        eventSource.close();
+      } else {
+        addHistory('output', data.message);
+      }
+    };
+    
+    eventSource.onerror = (error) => {
+      addHistory('error', 'Connection to benchmark server failed or ended.');
+      eventSource.close();
+    };
+  };
+
+  const resetDemo = () => {
+    setProjectId(null);
+    setHistory([
+      { id: Date.now().toString(), type: 'output', content: 'Demo reset. Ready to start Phase A.' }
+    ]);
   };
 
   const handleCommand = async (e: React.FormEvent) => {
@@ -69,7 +107,6 @@ export default function Terminal() {
   group <pr_id1> <pr_id2>  - Group a batch of PRs as an atomic unit
   priority <pr_id> <level> - Set PR priority (high, normal, low)
   reorder <pr_id> <pos>    - Reorder a PR in the queue (set queuePosition)
-  benchmark                - Run automated self-tests for conflict resolution
   clear                    - Clear terminal history`);
           break;
 
@@ -135,29 +172,6 @@ Processing: ${processing}`);
           addHistory('output', `PR ${args[1]} moved to queue position ${pos}.`);
           break;
 
-        case 'benchmark':
-        case 'benchmarks':
-          addHistory('output', 'Connecting to GitLab API for real benchmark...');
-          
-          const eventSource = new EventSource('/api/gitlab/benchmark');
-          
-          eventSource.onmessage = (event) => {
-            const data = JSON.parse(event.data);
-            if (data.type === 'projectId') {
-              setProjectId(data.projectId);
-            } else if (data.message === "DONE") {
-              eventSource.close();
-            } else {
-              addHistory('output', data.message);
-            }
-          };
-          
-          eventSource.onerror = (error) => {
-            addHistory('error', 'Connection to benchmark server failed or ended.');
-            eventSource.close();
-          };
-          break;
-
         default:
           addHistory('error', `Command not found: ${command}. Type "help" for available commands.`);
       }
@@ -167,16 +181,39 @@ Processing: ${processing}`);
   };
 
   return (
-    <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 min-h-[600px] lg:h-[600px]">
-      <div className="bg-zinc-950 rounded-2xl border border-zinc-800 overflow-hidden flex flex-col h-[600px] lg:h-auto font-mono shadow-2xl">
-        <div className="bg-zinc-900 border-b border-zinc-800 px-4 py-3 flex items-center gap-2">
-          <TerminalIcon className="w-5 h-5 text-indigo-400" />
-          <span className="text-sm font-semibold text-zinc-300">AI GitFlow CLI</span>
-          {isPaused && (
-            <span className="ml-auto text-xs px-2 py-1 bg-red-500/10 text-red-400 rounded-full border border-red-500/20">
-              SYSTEM PAUSED
-            </span>
-          )}
+    <div className={`grid grid-cols-1 lg:grid-cols-2 gap-6 ${className}`}>
+      <div className="bg-zinc-950 rounded-2xl border border-zinc-800 overflow-hidden flex flex-col h-full font-mono shadow-2xl">
+        <div className="bg-zinc-900 border-b border-zinc-800 px-4 py-3 flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <TerminalIcon className="w-5 h-5 text-indigo-400" />
+            <span className="text-sm font-semibold text-zinc-300">AI GitFlow CLI</span>
+            {isPaused && (
+              <span className="ml-2 text-xs px-2 py-1 bg-red-500/10 text-red-400 rounded-full border border-red-500/20">
+                SYSTEM PAUSED
+              </span>
+            )}
+          </div>
+          <div className="flex items-center gap-2">
+            <button 
+              onClick={() => runDemo('A')} 
+              className="px-3 py-1.5 bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-medium rounded-lg transition-colors"
+            >
+              Start Phase A (Dev)
+            </button>
+            <button 
+              onClick={() => runDemo('B')} 
+              disabled={!projectId}
+              className={`px-3 py-1.5 text-white text-xs font-medium rounded-lg transition-colors ${projectId ? 'bg-emerald-600 hover:bg-emerald-700' : 'bg-zinc-700 cursor-not-allowed text-zinc-400'}`}
+            >
+              Start Phase B (Merge)
+            </button>
+            <button 
+              onClick={resetDemo} 
+              className="px-3 py-1.5 bg-red-600 hover:bg-red-700 text-white text-xs font-medium rounded-lg transition-colors ml-2"
+            >
+              Reset Demo
+            </button>
+          </div>
         </div>
         
         <div className="flex-1 overflow-y-auto p-4 space-y-2 text-sm">
@@ -210,7 +247,7 @@ Processing: ${processing}`);
         </form>
       </div>
 
-      <div className="bg-zinc-950 rounded-2xl border border-zinc-800 overflow-hidden flex flex-col h-[600px] lg:h-auto font-mono shadow-2xl">
+      <div className="bg-zinc-950 rounded-2xl border border-zinc-800 overflow-hidden flex flex-col h-full font-mono shadow-2xl">
         <div className="bg-zinc-900 border-b border-zinc-800 px-4 py-3 flex items-center gap-2">
           <GitBranch className="w-5 h-5 text-emerald-400" />
           <span className="text-sm font-semibold text-zinc-300">Live Git Graph</span>

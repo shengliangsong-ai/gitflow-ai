@@ -17,14 +17,7 @@ async function startServer() {
   const projectSnapshots = new Map<string, { title: string, commits: any[] }[]>();
 
   const fetchGitLabGraph = async (projectId: string, token: string) => {
-    // Fetch all commits
-    const commitsRes = await fetch(`https://gitlab.com/api/v4/projects/${projectId}/repository/commits?all=true`, {
-      headers: { "PRIVATE-TOKEN": token }
-    });
-    if (!commitsRes.ok) throw new Error(`Failed to fetch commits: ${await commitsRes.text()}`);
-    const commits = await commitsRes.json();
-    
-    // Fetch all branches to map refs
+    // Fetch all branches to map refs and get commits
     const branchesRes = await fetch(`https://gitlab.com/api/v4/projects/${projectId}/repository/branches`, {
       headers: { "PRIVATE-TOKEN": token }
     });
@@ -36,6 +29,25 @@ async function startServer() {
       headers: { "PRIVATE-TOKEN": token }
     });
     const tags = tagsRes.ok ? await tagsRes.json() : [];
+    
+    // Fetch commits for each branch and combine them
+    const allCommitsMap = new Map();
+    for (const branch of branches) {
+      const commitsRes = await fetch(`https://gitlab.com/api/v4/projects/${projectId}/repository/commits?ref_name=${encodeURIComponent(branch.name)}&per_page=100`, {
+        headers: { "PRIVATE-TOKEN": token }
+      });
+      if (commitsRes.ok) {
+        const branchCommits = await commitsRes.json();
+        // Reverse to process oldest first, ensuring topological order for commits in the same second
+        const reversedCommits = [...branchCommits].reverse();
+        for (const c of reversedCommits) {
+          if (!allCommitsMap.has(c.id)) {
+            allCommitsMap.set(c.id, c);
+          }
+        }
+      }
+    }
+    const commits = Array.from(allCommitsMap.values());
     
     // Map branch names and tags to commit hashes
     const commitRefs: Record<string, string[]> = {};
@@ -51,14 +63,23 @@ async function startServer() {
     }
     
     // Format to git2json
-    return commits.map((c: any) => ({
+    return commits.reverse().map((c: any) => ({
       hash: c.id,
+      hashAbbrev: c.short_id,
       parents: c.parent_ids || [],
+      parentsAbbrev: (c.parent_ids || []).map((p: string) => p.substring(0, 8)),
       subject: c.title,
+      body: c.message,
       refs: commitRefs[c.id] || [],
       author: {
         name: c.author_name,
-        email: c.author_email
+        email: c.author_email,
+        timestamp: new Date(c.created_at).getTime() / 1000
+      },
+      committer: {
+        name: c.committer_name,
+        email: c.committer_email,
+        timestamp: new Date(c.committed_date).getTime() / 1000
       }
     }));
   };
@@ -83,6 +104,29 @@ async function startServer() {
     res.json(snapshots);
   });
 
+  app.get("/api/gitlab/commits/:projectId/:sha/diff", async (req, res) => {
+    const token = process.env.GITLAB_TOKEN;
+    if (!token) return res.status(401).json({ error: "Missing GITLAB_TOKEN" });
+    
+    const { projectId, sha } = req.params;
+    
+    try {
+      const diffRes = await fetch(`https://gitlab.com/api/v4/projects/${projectId}/repository/commits/${sha}/diff`, {
+        headers: { "PRIVATE-TOKEN": token }
+      });
+      const diffData = await diffRes.json();
+      
+      const commitRes = await fetch(`https://gitlab.com/api/v4/projects/${projectId}/repository/commits/${sha}`, {
+        headers: { "PRIVATE-TOKEN": token }
+      });
+      const commitData = await commitRes.json();
+      
+      res.json({ commit: commitData, diff: diffData });
+    } catch (err: any) {
+      res.status(500).json({ error: err.message });
+    }
+  });
+
   app.get("/api/gitlab/benchmark", async (req, res) => {
     res.setHeader('Content-Type', 'text/event-stream');
     res.setHeader('Cache-Control', 'no-cache');
@@ -104,22 +148,13 @@ async function startServer() {
     try {
       sendLog("Initializing Complex Git Graph Benchmark...");
       
-      // 1. Create Project
-      sendLog("Creating new GitLab project...");
-      const projectName = `git-ai-benchmark-${Date.now()}`;
-      const createRes = await fetch("https://gitlab.com/api/v4/projects", {
-        method: "POST",
-        headers: { "PRIVATE-TOKEN": token, "Content-Type": "application/json" },
-        body: JSON.stringify({ name: projectName, visibility: "private", default_branch: "primary" })
-      });
-      if (!createRes.ok) throw new Error(`Failed to create project: ${await createRes.text()}`);
-      const project = await createRes.json();
-      const projectId = project.id;
-      sendLog(`Project created: ${project.web_url}`);
-      res.write(`data: ${JSON.stringify({ type: 'projectId', projectId })}\n\n`);
+      const phase = req.query.phase as string;
+      let projectId = req.query.projectId as string;
 
       // Helper functions
       const commit = async (branch: string, message: string) => {
+        sendLog(`$ git checkout ${branch}`);
+        sendLog(`$ git commit -m "${message}"`);
         const filename = `file_${Date.now()}_${Math.floor(Math.random()*10000)}.txt`;
         const res = await fetch(`https://gitlab.com/api/v4/projects/${projectId}/repository/commits`, {
           method: "POST",
@@ -131,58 +166,82 @@ async function startServer() {
           })
         });
         if (!res.ok) throw new Error(`Commit failed: ${await res.text()}`);
-        return res.json();
+        const data = await res.json();
+        sendLog(`[${branch} ${data.short_id}] ${data.message}`);
+        return data;
       };
 
       const createBranch = async (branch: string, ref: string) => {
+        sendLog(`$ git checkout -b ${branch} ${ref}`);
         const res = await fetch(`https://gitlab.com/api/v4/projects/${projectId}/repository/branches?branch=${branch}&ref=${ref}`, {
           method: "POST",
           headers: { "PRIVATE-TOKEN": token }
         });
         if (!res.ok) throw new Error(`Create branch failed: ${await res.text()}`);
-        return res.json();
+        const data = await res.json();
+        sendLog(`Switched to a new branch '${branch}'`);
+        return data;
       };
 
       const createTag = async (tag: string, ref: string) => {
+        sendLog(`$ git tag ${tag} ${ref}`);
         const res = await fetch(`https://gitlab.com/api/v4/projects/${projectId}/repository/tags?tag_name=${tag}&ref=${ref}`, {
           method: "POST",
           headers: { "PRIVATE-TOKEN": token }
         });
         if (!res.ok) throw new Error(`Create tag failed: ${await res.text()}`);
-        return res.json();
+        const data = await res.json();
+        sendLog(`Created tag '${tag}' at ${data.commit.short_id}`);
+        return data;
       };
 
-      const mergeBranch = async (source: string, target: string) => {
-        const mrRes = await fetch(`https://gitlab.com/api/v4/projects/${projectId}/merge_requests`, {
-          method: "POST",
-          headers: { "PRIVATE-TOKEN": token, "Content-Type": "application/json" },
-          body: JSON.stringify({ source_branch: source, target_branch: target, title: `Merge ${source} to ${target}`, remove_source_branch: false })
-        });
-        if (!mrRes.ok) throw new Error(`Create MR failed: ${await mrRes.text()}`);
-        const mr = await mrRes.json();
+      const cherryPickBranch = async (branch: string, targetBranch: string) => {
+        sendLog(`$ git checkout ${targetBranch}`);
         
-        let mergeRes;
-        for (let i = 0; i < 5; i++) {
-          await new Promise(r => setTimeout(r, 2000));
-          mergeRes = await fetch(`https://gitlab.com/api/v4/projects/${projectId}/merge_requests/${mr.iid}/merge`, {
-            method: "PUT",
+        // Get commits on branch that are not on targetBranch
+        const res = await fetch(`https://gitlab.com/api/v4/projects/${projectId}/repository/commits?ref_name=${branch}&per_page=3`, {
+          headers: { "PRIVATE-TOKEN": token }
+        });
+        if (!res.ok) throw new Error(`Failed to fetch commits: ${await res.text()}`);
+        const commits = await res.json();
+        
+        // Cherry-pick from oldest to newest
+        const commitsToPick = commits.reverse();
+        for (const c of commitsToPick) {
+          sendLog(`$ git cherry-pick ${c.short_id}`);
+          const cpRes = await fetch(`https://gitlab.com/api/v4/projects/${projectId}/repository/commits/${c.id}/cherry_pick`, {
+            method: "POST",
             headers: { "PRIVATE-TOKEN": token, "Content-Type": "application/json" },
-            body: JSON.stringify({ should_remove_source_branch: false })
+            body: JSON.stringify({ branch: targetBranch })
           });
-          if (mergeRes.ok) break;
+          if (!cpRes.ok) throw new Error(`Cherry-pick failed: ${await cpRes.text()}`);
+          const data = await cpRes.json();
+          sendLog(`[${targetBranch} ${data.short_id}] ${data.message}`);
         }
-        if (!mergeRes || !mergeRes.ok) throw new Error(`Merge MR failed: ${await mergeRes?.text()}`);
-        return mergeRes.json();
       };
 
-      const cherryPick = async (sha: string, branch: string) => {
-        const res = await fetch(`https://gitlab.com/api/v4/projects/${projectId}/repository/commits/${sha}/cherry_pick`, {
-          method: "POST",
-          headers: { "PRIVATE-TOKEN": token, "Content-Type": "application/json" },
-          body: JSON.stringify({ branch })
+      const updateBranch = async (branch: string, ref: string) => {
+        sendLog(`$ git branch -f ${branch} ${ref}`);
+        await fetch(`https://gitlab.com/api/v4/projects/${projectId}/repository/branches/${encodeURIComponent(branch)}`, {
+          method: "DELETE",
+          headers: { "PRIVATE-TOKEN": token }
         });
-        if (!res.ok) throw new Error(`Cherry-pick failed: ${await res.text()}`);
-        return res.json();
+        
+        let success = false;
+        for (let i = 0; i < 5; i++) {
+          await new Promise(r => setTimeout(r, 1000));
+          const createRes = await fetch(`https://gitlab.com/api/v4/projects/${projectId}/repository/branches?branch=${encodeURIComponent(branch)}&ref=${encodeURIComponent(ref)}`, {
+            method: "POST",
+            headers: { "PRIVATE-TOKEN": token }
+          });
+          if (createRes.ok) {
+            success = true;
+            break;
+          }
+        }
+        if (!success) {
+          sendLog(`Warning: Failed to recreate branch ${branch} at ${ref}`);
+        }
       };
 
       const captureSnapshot = async (title: string) => {
@@ -196,67 +255,60 @@ async function startServer() {
         }
       };
 
-      // Execute Sequence
-      sendLog("Creating initial commit on primary branch...");
-      await commit("primary", "Initial commit");
+      if (phase === 'A') {
+        // 1. Create Project
+        sendLog("Creating new GitLab project...");
+        const projectName = `git-ai-benchmark-${Date.now()}`;
+        const createRes = await fetch("https://gitlab.com/api/v4/projects", {
+          method: "POST",
+          headers: { "PRIVATE-TOKEN": token, "Content-Type": "application/json" },
+          body: JSON.stringify({ name: projectName, visibility: "private", default_branch: "primary" })
+        });
+        if (!createRes.ok) throw new Error(`Failed to create project: ${await createRes.text()}`);
+        const project = await createRes.json();
+        projectId = String(project.id);
+        sendLog(`Project created: ${project.web_url}`);
+        res.write(`data: ${JSON.stringify({ type: 'projectId', projectId })}\n\n`);
 
-      sendLog("Creating branches prjA and prjB...");
-      await createBranch("prjA", "primary");
-      await createBranch("prjB", "primary");
+        sendLog(`$ git remote -v`);
+        sendLog(`origin  ${project.http_url_to_repo} (fetch)`);
+        sendLog(`origin  ${project.http_url_to_repo} (push)`);
 
-      sendLog("Adding commit to primary to ensure merge commits...");
-      await commit("primary", "Primary commit 2");
+        // Execute Sequence A
+        await commit("primary", "Initial commit");
+        await commit("primary", "add design doc with architecture diagram in svg and mermaid format");
+        await commit("primary", "create interface for 8 different components");
 
-      sendLog("Adding 2 commits to prjA...");
-      await commit("prjA", "prjA commit 1");
-      await commit("prjA", "prjA commit 2");
+        const components = ["comp1", "comp2", "comp3", "comp4"];
+        for (const comp of components) {
+          await createBranch(comp, "primary");
+          await commit(comp, `${comp} commit 1`);
+          await commit(comp, `${comp} commit 2`);
+          await commit(comp, `${comp} commit 3`);
+        }
+        
+        await captureSnapshot("Phase A Complete");
+        sendLog(`Phase A complete! Project ID: ${projectId}`);
+      } else if (phase === 'B') {
+        if (!projectId) throw new Error("projectId is required for Phase B");
+        
+        sendLog(`Starting Phase B for project ${projectId}...`);
+        
+        const components = ["comp1", "comp2", "comp3", "comp4"];
+        for (const comp of components) {
+          await cherryPickBranch(comp, "primary");
+        }
 
-      sendLog("Adding 3 commits to prjB...");
-      await commit("prjB", "prjB commit 1");
-      await commit("prjB", "prjB commit 2");
-      await commit("prjB", "prjB commit 3");
+        for (const comp of components) {
+          await updateBranch(comp, "primary");
+        }
+        
+        await captureSnapshot("Final State");
+        sendLog(`Phase B complete! View the real repo here: https://gitlab.com/projects/${projectId}`);
+      } else {
+        throw new Error("Invalid phase. Use phase=A or phase=B");
+      }
       
-      await captureSnapshot("Before merge");
-
-      sendLog("Tagging merge checkpoint 1...");
-      await createTag("merge-checkpoint-1", "primary");
-
-      sendLog("Merging prjA to primary branch...");
-      await mergeBranch("prjA", "primary");
-      
-      await captureSnapshot("After merging prjA");
-      
-      sendLog("Merging prjB to primary branch...");
-      await mergeBranch("prjB", "primary");
-
-      await captureSnapshot("After merging prjB");
-
-      sendLog("Adding 2 more commits {x,y} to prjA...");
-      const commitX = await commit("prjA", "Commit X");
-      const commitY = await commit("prjA", "Commit Y");
-
-      sendLog("Adding 1 more commit {z} to prjB...");
-      const commitZ = await commit("prjB", "Commit Z");
-
-      sendLog("Cutting new-prjA and cherry-picking {x,y}...");
-      await createBranch("new-prjA", "primary");
-      await cherryPick(commitX.id, "new-prjA");
-      await cherryPick(commitY.id, "new-prjA");
-
-      sendLog("Cutting new-prjB and cherry-picking {z}...");
-      await createBranch("new-prjB", "primary");
-      await cherryPick(commitZ.id, "new-prjB");
-
-      sendLog("Tagging merge checkpoint 2...");
-      await createTag("merge-checkpoint-2", "primary");
-
-      sendLog("Cutting final branches from primary...");
-      await createBranch("final-prjA", "primary");
-      await createBranch("final-prjB", "primary");
-      
-      await captureSnapshot("Final State");
-
-      sendLog(`Benchmark complete! View the real repo here: ${project.web_url}`);
       sendLog("DONE");
     } catch (error: any) {
       sendLog(`Error: ${error.message}`);

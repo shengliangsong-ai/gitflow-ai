@@ -7,12 +7,12 @@ const slides = [
     id: 1,
     title: "The Problem: Broken Main Branches",
     icon: <GitMerge className="w-12 h-12 text-red-400" />,
-    speechText: "Welcome to our pitch for A I GitFlow. The problem we are solving is broken main branches. In fast-moving engineering teams, the merge queue bottleneck is real. Developers push code that passes locally but breaks when merged. Manual code reviews take hours or days, and resolving complex rebase conflicts wastes valuable engineering time. The result is slower velocity, frustrated developers, and broken builds.",
+    speechText: "Welcome to our pitch for A I GitFlow. The problem we are solving is broken main branches. In fast-moving engineering teams, the sync queue bottleneck is real. Developers push code that passes locally but breaks when integrated. Manual code reviews take hours or days, and resolving complex rebase conflicts wastes valuable engineering time. The result is slower velocity, frustrated developers, and broken builds.",
     content: (
       <div className="space-y-6 text-xl text-zinc-300">
-        <p>In fast-moving engineering teams, the <strong>merge queue bottleneck</strong> is real.</p>
+        <p>In fast-moving engineering teams, the <strong>sync queue bottleneck</strong> is real.</p>
         <ul className="list-disc pl-8 space-y-4">
-          <li>Developers push code that passes locally but breaks when merged.</li>
+          <li>Developers push code that passes locally but breaks when integrated.</li>
           <li>Manual code reviews take hours or days.</li>
           <li>Resolving complex rebase conflicts wastes valuable engineering time.</li>
         </ul>
@@ -124,6 +124,17 @@ const slides = [
   },
   {
     id: 6,
+    title: "Live Demo: AI GitFlow Benchmark",
+    icon: <Terminal className="w-12 h-12 text-cyan-400" />,
+    speechText: "Let's see it in action. This is our live benchmark demo. In Phase A, we simulate parallel development by creating a new repository and branching out multiple components. In Phase B, our AI orchestrates the merge process, automatically resolving conflicts and creating a clean, linear history. You can start the demo right from this terminal.",
+    content: (
+      <div className="w-full h-full -mt-4">
+        <TerminalComponent className="h-[500px]" />
+      </div>
+    )
+  },
+  {
+    id: 7,
     title: "Why This Wins",
     icon: <PresentationIcon className="w-12 h-12 text-indigo-400" />,
     speechText: "Why does this win? Because we didn't just build a dashboard; we built a workflow integration. There is zero friction: developers don't need to learn a new U I, they just type git-ai instead of git. We have real-time sync using Firebase Firestore to ensure the C L I and Web Dashboard are always perfectly in sync. And we are data-driven, with GitLab Analytics S D K integration proving we are thinking about enterprise adoption from day one. Thank you, Judges!",
@@ -143,6 +154,7 @@ const slides = [
 
 // Need to import LayoutDashboard for the icon in slide 2
 import { LayoutDashboard } from 'lucide-react';
+import TerminalComponent from './Terminal';
 
 export default function Presentation() {
   const [currentSlide, setCurrentSlide] = useState(0);

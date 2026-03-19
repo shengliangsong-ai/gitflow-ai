@@ -38,7 +38,7 @@ export default function Architecture() {
         <h2 className="text-2xl font-bold text-white border-b border-zinc-800 pb-4 print:text-black print:border-gray-300">1. Executive Summary</h2>
         <div className="text-zinc-300 space-y-4 leading-relaxed print:text-gray-800">
           <p>
-            <strong>GitFlow AI</strong> is a next-generation orchestration layer designed to eliminate "Merge Hell" in large-scale engineering organizations. By leveraging the <strong>Gemini 3.1 Pro</strong> multimodal model, the system semantically understands code changes, automates complex merge topologies, and provides real-time conflict resolution strategies that go beyond simple line-diffing.
+            <strong>GitFlow AI</strong> is a next-generation orchestration layer designed to eliminate "Merge Hell" in large-scale engineering organizations. By leveraging the <strong>Gemini 3.1 Pro</strong> multimodal model, the system semantically understands code changes, automates complex sync topologies, and provides real-time conflict resolution strategies that go beyond simple line-diffing. Our core design principle is to keep the primary branch clean as a straight line by enforcing a strict linear history on the primary branch while seamlessly merging feature branches.
           </p>
         </div>
       </div>

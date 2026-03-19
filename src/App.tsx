@@ -47,7 +47,7 @@ export default function App() {
               <GitMerge className="w-12 h-12 text-indigo-400" />
             </div>
           </div>
-          <h1 className="text-3xl font-bold mb-2">AI Auto-Merge Queue</h1>
+          <h1 className="text-3xl font-bold mb-2">AI Auto-Sync Queue</h1>
           <p className="text-zinc-400 mb-8">GitLab Hackathon Project</p>
           <button
             onClick={loginWithGoogle}
