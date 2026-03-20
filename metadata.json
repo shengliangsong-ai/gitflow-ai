@@ -1,5 +1,5 @@
 {
-  "name": "AI Auto-Sync Queue",
+  "name": "gitflow.ai",
   "description": "A GitLab hackathon project featuring an AI-powered auto-sync workflow queue that automatically resolves conflicts, runs tests, and merges project branches to the primary branch to maintain a clean, linear history.",
   "requestFramePermissions": []
 }
