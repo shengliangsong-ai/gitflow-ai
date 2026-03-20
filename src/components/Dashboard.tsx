@@ -157,22 +157,23 @@ export default function Dashboard() {
   };
 
   const handleSimulateTeam = async () => {
-    // Switch to terminal tab to see the output
-    const terminalTab = document.querySelector('button[aria-label="Terminal"]') as HTMLButtonElement;
-    if (terminalTab) terminalTab.click();
+    // Switch to terminal tab
+    window.dispatchEvent(new CustomEvent('switch-tab', { detail: { tab: 'terminal' } }));
 
-    // The terminal will handle the SSE connection
-    // We can trigger it by dispatching a custom event or just let the user know
-    // Actually, we can just navigate to the terminal and run the command
-    window.dispatchEvent(new CustomEvent('run-demo', { detail: { phase: 'team' } }));
+    // Small delay to ensure the terminal component is mounted before sending the run-demo event
+    setTimeout(() => {
+      window.dispatchEvent(new CustomEvent('run-demo', { detail: { phase: 'team' } }));
+    }, 100);
   };
 
   const handleSimulateConflict = async () => {
     // Switch to terminal tab
-    const terminalTab = document.querySelector('button[aria-label="Terminal"]') as HTMLButtonElement;
-    if (terminalTab) terminalTab.click();
+    window.dispatchEvent(new CustomEvent('switch-tab', { detail: { tab: 'terminal' } }));
 
-    window.dispatchEvent(new CustomEvent('run-demo', { detail: { phase: 'conflict' } }));
+    // Small delay to ensure the terminal component is mounted
+    setTimeout(() => {
+      window.dispatchEvent(new CustomEvent('run-demo', { detail: { phase: 'conflict' } }));
+    }, 100);
   };
 
   const handleClearQueue = async () => {

@@ -17,6 +17,17 @@ export default function App() {
     trackPageView(activeTab);
   }, [activeTab]);
 
+  useEffect(() => {
+    const handleSwitchTab = (e: Event) => {
+      const customEvent = e as CustomEvent;
+      if (customEvent.detail && customEvent.detail.tab) {
+        setActiveTab(customEvent.detail.tab);
+      }
+    };
+    window.addEventListener('switch-tab', handleSwitchTab);
+    return () => window.removeEventListener('switch-tab', handleSwitchTab);
+  }, []);
+
   const handleSyncGithub = () => {
     if (isSyncing) return;
     setIsSyncing(true);
