@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { LogOut, GitMerge, Terminal as TerminalIcon, Map, LayoutDashboard, Command, FileText, Presentation as PresentationIcon } from 'lucide-react';
+import { LogOut, GitMerge, Terminal as TerminalIcon, Map, LayoutDashboard, Command, FileText, Presentation as PresentationIcon, RefreshCw } from 'lucide-react';
 import Dashboard from './components/Dashboard';
 import Terminal from './components/Terminal';
 import Roadmap from './components/Roadmap';
@@ -11,10 +11,34 @@ import { trackPageView } from './analytics';
 
 export default function App() {
   const [activeTab, setActiveTab] = useState<'dashboard' | 'terminal' | 'roadmap' | 'cli' | 'architecture' | 'presentation' | 'benchmark'>('dashboard');
+  const [isSyncing, setIsSyncing] = useState(false);
 
   useEffect(() => {
     trackPageView(activeTab);
   }, [activeTab]);
+
+  const handleSyncGithub = () => {
+    if (isSyncing) return;
+    setIsSyncing(true);
+    
+    const url = `/api/gitlab/sync-github`;
+    const eventSource = new EventSource(url);
+    
+    eventSource.onmessage = (event) => {
+      const data = JSON.parse(event.data);
+      if (data.message === "DONE") {
+        eventSource.close();
+        setIsSyncing(false);
+        alert("GitHub Sync Completed Successfully!");
+      }
+    };
+    
+    eventSource.onerror = (error) => {
+      eventSource.close();
+      setIsSyncing(false);
+      alert("GitHub Sync Failed or Ended.");
+    };
+  };
 
   return (
     <div className="min-h-screen bg-zinc-950 text-zinc-100 font-sans">
@@ -30,6 +54,14 @@ export default function App() {
               </div>
               
               <div className="flex items-center space-x-1">
+                <button
+                  onClick={handleSyncGithub}
+                  disabled={isSyncing}
+                  className={`flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium transition-colors ${isSyncing ? 'bg-zinc-800 text-zinc-500 cursor-not-allowed' : 'bg-purple-600/20 text-purple-400 hover:bg-purple-600/30 hover:text-purple-300'}`}
+                >
+                  <RefreshCw className={`w-4 h-4 ${isSyncing ? 'animate-spin' : ''}`} />
+                  {isSyncing ? 'Syncing...' : 'Sync GitHub'}
+                </button>
                 <button
                   onClick={() => setActiveTab('dashboard')}
                   className={`flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium transition-colors ${activeTab === 'dashboard' ? 'bg-zinc-800 text-white' : 'text-zinc-400 hover:text-white hover:bg-zinc-800/50'}`}

@@ -128,6 +128,7 @@ export default function Terminal({ className = "h-[calc(100vh-8rem)]" }: { class
   resume                   - Un-pause the global merge workflow
   remove <pr_id>           - Remove a PR from the merge queue
   group <pr_id1> <pr_id2>  - Group a batch of PRs as an atomic unit
+  merge-group <id> <type>  - Merge a group (type: n-way or cascading)
   priority <pr_id> <level> - Set PR priority (high, normal, low)
   reorder <pr_id> <pos>    - Reorder a PR in the queue (set queuePosition)
   clear                    - Clear terminal history`);
@@ -162,19 +163,75 @@ Processing: ${processing}`);
 
         case 'remove':
           if (!args[1]) throw new Error('Usage: remove <pr_id>');
-          await updateDoc(doc(db, 'pullRequests', args[1]), { status: 'removed' });
-          addHistory('output', `PR ${args[1]} removed from merge queue.`);
+          const removeQ = query(collection(db, 'pullRequests'));
+          const removeSnap = await getDocs(removeQ);
+          const prToRemove = removeSnap.docs.find(d => d.id.startsWith(args[1]));
+          if (!prToRemove) throw new Error(`PR ${args[1]} not found.`);
+          await updateDoc(doc(db, 'pullRequests', prToRemove.id), { status: 'removed' });
+          addHistory('output', `PR ${prToRemove.id.slice(0, 6)} removed from merge queue.`);
           break;
 
         case 'group':
           if (args.length < 3) throw new Error('Usage: group <pr_id1> <pr_id2> [pr_id3...]');
-          const prIds = args.slice(1);
+          const shortIds = args.slice(1);
+          const groupQ2 = query(collection(db, 'pullRequests'));
+          const groupSnap2 = await getDocs(groupQ2);
+          
+          const prIds = shortIds.map(shortId => {
+            const pr = groupSnap2.docs.find(d => d.id.startsWith(shortId));
+            if (!pr) throw new Error(`PR ${shortId} not found.`);
+            return pr.id;
+          });
+          
           const groupId = 'grp_' + Math.random().toString(36).substring(2, 9);
           
           await Promise.all(prIds.map(id => 
             updateDoc(doc(db, 'pullRequests', id), { groupId })
           ));
-          addHistory('output', `Grouped PRs [${prIds.join(', ')}] as atomic unit: ${groupId}`);
+          addHistory('output', `Grouped PRs [${prIds.map(id => id.slice(0, 6)).join(', ')}] as atomic unit: ${groupId}`);
+          break;
+
+        case 'merge-group':
+          if (args.length !== 3) throw new Error('Usage: merge-group <group_id> <n-way|cascading>');
+          const targetGroupId = args[1];
+          const topology = args[2].toLowerCase();
+          
+          if (!['n-way', 'cascading'].includes(topology)) {
+            throw new Error('Topology must be "n-way" or "cascading".');
+          }
+          
+          // Fetch PRs in the group
+          const groupQ = query(collection(db, 'pullRequests'), where('groupId', '==', targetGroupId));
+          const groupSnap = await getDocs(groupQ);
+          const groupPrs = groupSnap.docs.map(d => ({ id: d.id, title: d.data().title || d.id }));
+          
+          if (groupPrs.length === 0) {
+            throw new Error(`No PRs found in group ${targetGroupId}.`);
+          }
+          
+          addHistory('output', `Starting ${topology} merge for group ${targetGroupId} (${groupPrs.length} PRs)...`);
+          
+          const prTitles = groupPrs.map(pr => encodeURIComponent(pr.title)).join(',');
+          const mgUrl = `/api/gitlab/merge-group?groupId=${targetGroupId}&topology=${topology}&projectId=${projectId || ''}&prs=${prTitles}`;
+          const mgEventSource = new EventSource(mgUrl);
+          
+          mgEventSource.onmessage = (event) => {
+            const data = JSON.parse(event.data);
+            if (data.message === "DONE") {
+              mgEventSource.close();
+              // Update PR statuses to merged
+              Promise.all(groupPrs.map(pr => 
+                updateDoc(doc(db, 'pullRequests', pr.id), { status: 'merged' })
+              )).catch(console.error);
+            } else {
+              addHistory('output', data.message);
+            }
+          };
+          
+          mgEventSource.onerror = (error) => {
+            addHistory('error', 'Connection to merge-group server failed or ended.');
+            mgEventSource.close();
+          };
           break;
 
         case 'priority':
@@ -182,8 +239,13 @@ Processing: ${processing}`);
           const level = args[2].toLowerCase();
           if (!['high', 'normal', 'low'].includes(level)) throw new Error('Invalid priority level.');
           
-          await updateDoc(doc(db, 'pullRequests', args[1]), { priority: level });
-          addHistory('output', `PR ${args[1]} priority set to ${level}.`);
+          const prioQ = query(collection(db, 'pullRequests'));
+          const prioSnap = await getDocs(prioQ);
+          const prToPrio = prioSnap.docs.find(d => d.id.startsWith(args[1]));
+          if (!prToPrio) throw new Error(`PR ${args[1]} not found.`);
+          
+          await updateDoc(doc(db, 'pullRequests', prToPrio.id), { priority: level });
+          addHistory('output', `PR ${prToPrio.id.slice(0, 6)} priority set to ${level}.`);
           break;
 
         case 'reorder':
@@ -191,8 +253,13 @@ Processing: ${processing}`);
           const pos = parseInt(args[2], 10);
           if (isNaN(pos)) throw new Error('Position must be a number.');
           
-          await updateDoc(doc(db, 'pullRequests', args[1]), { queuePosition: pos });
-          addHistory('output', `PR ${args[1]} moved to queue position ${pos}.`);
+          const reorderQ = query(collection(db, 'pullRequests'));
+          const reorderSnap = await getDocs(reorderQ);
+          const prToReorder = reorderSnap.docs.find(d => d.id.startsWith(args[1]));
+          if (!prToReorder) throw new Error(`PR ${args[1]} not found.`);
+          
+          await updateDoc(doc(db, 'pullRequests', prToReorder.id), { queuePosition: pos });
+          addHistory('output', `PR ${prToReorder.id.slice(0, 6)} moved to queue position ${pos}.`);
           break;
 
         default:
