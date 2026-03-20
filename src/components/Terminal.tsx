@@ -63,13 +63,36 @@ export default function Terminal({ className = "h-[calc(100vh-8rem)]" }: { class
     }
 
     const eventSource = new EventSource(url);
+    let currentProjectId = projectId;
     
     eventSource.onmessage = (event) => {
       const data = JSON.parse(event.data);
       if (data.type === 'projectId') {
         setProjectId(data.projectId);
+        currentProjectId = data.projectId;
       } else if (data.message === "DONE") {
         eventSource.close();
+        if (phase === 'conflict' && currentProjectId) {
+          addHistory('output', `Auto-starting AI merge for conflict resolution...`);
+          setTimeout(() => {
+            const mergeUrl = `/api/gitlab/auto-merge?projectId=${currentProjectId}`;
+            const mergeEventSource = new EventSource(mergeUrl);
+            
+            mergeEventSource.onmessage = (event) => {
+              const mergeData = JSON.parse(event.data);
+              if (mergeData.message === "DONE") {
+                mergeEventSource.close();
+              } else {
+                addHistory('output', mergeData.message);
+              }
+            };
+            
+            mergeEventSource.onerror = (error) => {
+              addHistory('error', 'Connection to merge server failed or ended.');
+              mergeEventSource.close();
+            };
+          }, 1000);
+        }
       } else {
         addHistory('output', data.message);
       }

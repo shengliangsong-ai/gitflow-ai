@@ -438,8 +438,8 @@ async function startServer() {
 
     try {
       const projectId = req.query.projectId as string;
-      const token = process.env.GITLAB_ACCESS_TOKEN;
-      if (!token) throw new Error("GITLAB_ACCESS_TOKEN is not set.");
+      const token = process.env.GITLAB_TOKEN;
+      if (!token) throw new Error("GITLAB_TOKEN is not set.");
       if (!projectId) throw new Error("projectId is required.");
 
       sendLog(`$ git merge feat/core-config`);
@@ -487,6 +487,16 @@ async function startServer() {
       sendLog(`[main ${data.short_id}] Merge branch 'feat/core-config' into main (AI Resolved)`);
       sendLog(`Merge successful! View the resolved repo here: https://gitlab.com/projects/${projectId}`);
       
+      // Capture snapshot after merge
+      try {
+        const graphData = await fetchGitLabGraph(projectId, token);
+        if (!projectSnapshots.has(projectId)) projectSnapshots.set(projectId, []);
+        projectSnapshots.get(projectId)!.push({ title: "After AI Auto-Merge", commits: graphData });
+        sendLog(`Captured snapshot: After AI Auto-Merge`);
+      } catch (e: any) {
+        sendLog(`Failed to capture snapshot: ${e.message}`);
+      }
+
       sendLog("DONE");
     } catch (error: any) {
       sendLog(`Error: ${error.message}`);
