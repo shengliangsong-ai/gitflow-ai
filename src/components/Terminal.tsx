@@ -35,12 +35,23 @@ export default function Terminal({ className = "h-[calc(100vh-8rem)]" }: { class
     bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [history]);
 
+  useEffect(() => {
+    const handleRunDemo = (e: Event) => {
+      const customEvent = e as CustomEvent;
+      if (customEvent.detail && customEvent.detail.phase) {
+        runDemo(customEvent.detail.phase);
+      }
+    };
+    window.addEventListener('run-demo', handleRunDemo);
+    return () => window.removeEventListener('run-demo', handleRunDemo);
+  }, [projectId]);
+
   const addHistory = (type: 'input' | 'output' | 'error', content: string) => {
     setHistory(prev => [...prev, { id: Date.now().toString() + Math.random(), type, content }]);
   };
 
-  const runDemo = (phase: 'A' | 'B') => {
-    addHistory('output', `Starting Demo Phase ${phase}...`);
+  const runDemo = (phase: 'A' | 'B' | 'team' | 'conflict') => {
+    addHistory('output', `Starting Demo Phase: ${phase}...`);
     
     let url = `/api/gitlab/benchmark?phase=${phase}`;
     if (phase === 'B') {
@@ -131,7 +142,20 @@ export default function Terminal({ className = "h-[calc(100vh-8rem)]" }: { class
   merge-group <id> <type>  - Merge a group (type: n-way or cascading)
   priority <pr_id> <level> - Set PR priority (high, normal, low)
   reorder <pr_id> <pos>    - Reorder a PR in the queue (set queuePosition)
+  benchmark <phase>        - Run a benchmark phase (A, B, team, conflict)
+  sync                     - Sync with GitHub
   clear                    - Clear terminal history`);
+          break;
+
+        case 'benchmark':
+          if (!args[1] || !['A', 'B', 'team', 'conflict'].includes(args[1])) {
+            throw new Error('Usage: benchmark <A|B|team|conflict>');
+          }
+          runDemo(args[1] as 'A' | 'B' | 'team' | 'conflict');
+          break;
+
+        case 'sync':
+          syncGithub();
           break;
 
         case 'clear':
@@ -139,15 +163,15 @@ export default function Terminal({ className = "h-[calc(100vh-8rem)]" }: { class
           break;
 
         case 'status':
-          const q = query(collection(db, 'pullRequests'), where('status', 'in', ['merge_queue', 'merging', 'testing', 'conflict']));
+          const q = query(collection(db, 'pullRequests'), where('status', 'in', ['code_review', 'merge_queue', 'merging', 'testing', 'conflict']));
           const snapshot = await getDocs(q);
-          const waiting = snapshot.docs.filter(d => d.data().status === 'merge_queue').length;
+          const waiting = snapshot.docs.filter(d => d.data().status === 'merge_queue' || d.data().status === 'code_review').length;
           const processing = snapshot.docs.length - waiting;
           
           addHistory('output', `System Status: ${isPaused ? 'PAUSED' : 'ACTIVE'}
-Total PRs in queue: ${snapshot.docs.length}
-Waiting: ${waiting}
-Processing: ${processing}`);
+Total PRs active: ${snapshot.docs.length}
+Waiting/Review: ${waiting}
+Processing/Conflict: ${processing}`);
           break;
 
         case 'pause':

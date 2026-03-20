@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { collection, onSnapshot, query, addDoc, updateDoc, doc, serverTimestamp, getDocs } from 'firebase/firestore';
 import { db } from '../firebase';
 import { Branch, PullRequest } from '../types';
-import { GitBranch, GitPullRequest, GitMerge, Plus, RefreshCw, AlertCircle, CheckCircle2, Clock, Play, Zap } from 'lucide-react';
+import { GitBranch, GitPullRequest, GitMerge, Plus, RefreshCw, AlertCircle, CheckCircle2, Clock, Play, Zap, Users } from 'lucide-react';
 import CreatePRModal from './CreatePRModal';
 import { createGitgraph, templateExtend, TemplateName } from '@gitgraph/js';
 
@@ -156,6 +156,35 @@ export default function Dashboard() {
     }
   };
 
+  const handleSimulateTeam = async () => {
+    // Switch to terminal tab to see the output
+    const terminalTab = document.querySelector('button[aria-label="Terminal"]') as HTMLButtonElement;
+    if (terminalTab) terminalTab.click();
+
+    // The terminal will handle the SSE connection
+    // We can trigger it by dispatching a custom event or just let the user know
+    // Actually, we can just navigate to the terminal and run the command
+    window.dispatchEvent(new CustomEvent('run-demo', { detail: { phase: 'team' } }));
+  };
+
+  const handleSimulateConflict = async () => {
+    // Switch to terminal tab
+    const terminalTab = document.querySelector('button[aria-label="Terminal"]') as HTMLButtonElement;
+    if (terminalTab) terminalTab.click();
+
+    window.dispatchEvent(new CustomEvent('run-demo', { detail: { phase: 'conflict' } }));
+  };
+
+  const handleClearQueue = async () => {
+    try {
+      const q = query(collection(db, 'pullRequests'));
+      const snap = await getDocs(q);
+      await Promise.all(snap.docs.map(d => updateDoc(doc(db, 'pullRequests', d.id), { status: 'removed' })));
+    } catch (error) {
+      console.error("Error clearing queue:", error);
+    }
+  };
+
   const processPR = async (pr: PullRequest) => {
     try {
       // 0. Update status to analyzing
@@ -173,43 +202,54 @@ export default function Dashboard() {
 
       await updateDoc(doc(db, 'pullRequests', pr.id), {
         semanticAnalysis: intentData,
-        logs: [...pr.logs, 'Starting Semantic Intent Analysis...', 'Semantic Intent Analysis complete. Starting AI tests...']
+        logs: [...pr.logs, 'Starting Semantic Intent Analysis...', 'Semantic Intent Analysis complete. Checking for conflicts...']
       });
+
+      const parsedFiles = JSON.parse(pr.files || '[]');
+      const hasConflicts = parsedFiles.some((f: any) => f.content.includes('<<<<<<< HEAD'));
+
+      if (hasConflicts) {
+        await updateDoc(doc(db, 'pullRequests', pr.id), {
+          status: 'conflict',
+          logs: [...pr.logs, 'Starting Semantic Intent Analysis...', 'Semantic Intent Analysis complete. Checking for conflicts...', 'Conflict detected! Starting AI conflict resolution...']
+        });
+
+        // Call backend to resolve conflicts
+        const resolveRes = await fetch('/api/ai/resolve-conflict', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ prTitle: pr.title, files: parsedFiles })
+        });
+        const resolveData = await resolveRes.json();
+
+        await updateDoc(doc(db, 'pullRequests', pr.id), {
+          status: 'merged',
+          logs: [...pr.logs, 'Starting Semantic Intent Analysis...', 'Semantic Intent Analysis complete. Checking for conflicts...', 'Conflict detected! Starting AI conflict resolution...', ...resolveData.logs, 'AI successfully resolved conflicts and merged PR.'],
+          files: JSON.stringify(resolveData.resolvedFiles || [])
+        });
+        return;
+      }
 
       // 1. Call backend to run tests
       const testRes = await fetch('/api/ai/run-tests', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ prTitle: pr.title, files: JSON.parse(pr.files || '[]') })
+        body: JSON.stringify({ prTitle: pr.title, files: parsedFiles })
       });
       const testData = await testRes.json();
       
       if (!testData.success) {
         await updateDoc(doc(db, 'pullRequests', pr.id), {
           status: 'failed',
-          logs: [...pr.logs, 'Starting Semantic Intent Analysis...', 'Semantic Intent Analysis complete. Starting AI tests...', ...testData.logs, 'Tests failed.']
+          logs: [...pr.logs, 'Starting Semantic Intent Analysis...', 'Semantic Intent Analysis complete. Checking for conflicts...', 'No conflicts. Starting AI tests...', ...testData.logs, 'Tests failed.']
         });
         return;
       }
 
-      await updateDoc(doc(db, 'pullRequests', pr.id), {
-        status: 'conflict',
-        logs: [...pr.logs, 'Starting Semantic Intent Analysis...', 'Semantic Intent Analysis complete. Starting AI tests...', ...testData.logs, 'Tests passed. Checking for conflicts...', 'Conflict detected!']
-      });
-
-      // 2. Call backend to resolve conflicts
-      const resolveRes = await fetch('/api/ai/resolve-conflict', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ prTitle: pr.title, files: JSON.parse(pr.files || '[]') })
-      });
-      const resolveData = await resolveRes.json();
-
       // 3. Update status to merged
       await updateDoc(doc(db, 'pullRequests', pr.id), {
         status: 'merged',
-        logs: [...pr.logs, 'Starting Semantic Intent Analysis...', 'Semantic Intent Analysis complete. Starting AI tests...', ...testData.logs, 'Tests passed. Checking for conflicts...', 'Conflict detected!', ...resolveData.logs, 'AI successfully resolved conflicts and merged PR.'],
-        files: JSON.stringify(resolveData.resolvedFiles || [])
+        logs: [...pr.logs, 'Starting Semantic Intent Analysis...', 'Semantic Intent Analysis complete. Checking for conflicts...', 'No conflicts. Starting AI tests...', ...testData.logs, 'Tests passed. Merging PR...'],
       });
 
     } catch (error) {
@@ -390,12 +430,32 @@ export default function Dashboard() {
               New Pull Request
             </button>
             <button
+              onClick={handleSimulateTeam}
+              className="w-full flex items-center justify-center gap-2 py-3 px-4 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl font-medium transition-colors"
+            >
+              <Users className="w-5 h-5" />
+              Simulate Team Activity
+            </button>
+            <button
+              onClick={handleSimulateConflict}
+              className="w-full flex items-center justify-center gap-2 py-3 px-4 bg-amber-600 hover:bg-amber-700 text-white rounded-xl font-medium transition-colors"
+            >
+              <AlertCircle className="w-5 h-5" />
+              Simulate Conflict
+            </button>
+            <button
               onClick={handleBiWeeklySync}
               disabled={isSyncing}
               className="w-full flex items-center justify-center gap-2 py-3 px-4 bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed text-white rounded-xl font-medium transition-colors"
             >
               <RefreshCw className={`w-5 h-5 ${isSyncing ? 'animate-spin' : ''}`} />
               {isSyncing ? 'Syncing...' : 'Trigger Bi-Weekly Sync'}
+            </button>
+            <button
+              onClick={handleClearQueue}
+              className="w-full flex items-center justify-center gap-2 py-3 px-4 bg-red-600/20 hover:bg-red-600/30 text-red-400 rounded-xl font-medium transition-colors border border-red-600/30 mt-2"
+            >
+              Clear Queue
             </button>
             <p className="text-xs text-zinc-500 text-center mt-2">
               Auto-merges all project branches to primary and rebases.

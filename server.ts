@@ -452,20 +452,36 @@ async function startServer() {
       let projectId = req.query.projectId as string;
 
       // Helper functions
-      const commit = async (branch: string, message: string) => {
+      const commit = async (branch: string, message: string, content?: string, filename?: string) => {
         sendLog(`$ git checkout ${branch}`);
         sendLog(`$ git commit -m "${message}"`);
-        const filename = `file_${Date.now()}_${Math.floor(Math.random()*10000)}.txt`;
+        const actualFilename = filename || `file_${Date.now()}_${Math.floor(Math.random()*10000)}.txt`;
+        const actualContent = content || `Content for ${message}`;
         const res = await fetch(`https://gitlab.com/api/v4/projects/${projectId}/repository/commits`, {
           method: "POST",
           headers: { "PRIVATE-TOKEN": token, "Content-Type": "application/json" },
           body: JSON.stringify({
             branch,
             commit_message: message,
-            actions: [{ action: "create", file_path: filename, content: `Content for ${message}` }]
+            actions: [{ action: "create", file_path: actualFilename, content: actualContent }]
           })
         });
-        if (!res.ok) throw new Error(`Commit failed: ${await res.text()}`);
+        if (!res.ok) {
+          // Try update if create fails
+          const updateRes = await fetch(`https://gitlab.com/api/v4/projects/${projectId}/repository/commits`, {
+            method: "POST",
+            headers: { "PRIVATE-TOKEN": token, "Content-Type": "application/json" },
+            body: JSON.stringify({
+              branch,
+              commit_message: message,
+              actions: [{ action: "update", file_path: actualFilename, content: actualContent }]
+            })
+          });
+          if (!updateRes.ok) throw new Error(`Commit failed: ${await updateRes.text()}`);
+          const data = await updateRes.json();
+          sendLog(`[${branch} ${data.short_id}] ${data.message}`);
+          return data;
+        }
         const data = await res.json();
         sendLog(`[${branch} ${data.short_id}] ${data.message}`);
         return data;
@@ -605,8 +621,68 @@ async function startServer() {
         
         await captureSnapshot("Final State");
         sendLog(`Phase B complete! View the real repo here: https://gitlab.com/projects/${projectId}`);
+      } else if (phase === 'team') {
+        sendLog("Creating new GitLab project for team simulation...");
+        const projectName = `gitflow-ai-sim-${Date.now()}`;
+        const createRes = await fetch("https://gitlab.com/api/v4/projects", {
+          method: "POST",
+          headers: { "PRIVATE-TOKEN": token, "Content-Type": "application/json" },
+          body: JSON.stringify({ name: projectName, visibility: "private", default_branch: "main" })
+        });
+        if (!createRes.ok) throw new Error(`Failed to create project: ${await createRes.text()}`);
+        const project = await createRes.json();
+        projectId = String(project.id);
+        sendLog(`Project created: ${project.web_url}`);
+        res.write(`data: ${JSON.stringify({ type: 'projectId', projectId })}\n\n`);
+
+        await commit("main", "Initial commit");
+        await commit("main", "setup project structure");
+
+        const features = [
+          { title: 'feat: add dark mode toggle', branch: 'feat/dark-mode' },
+          { title: 'fix: resolve race condition in auth', branch: 'fix/auth-race' },
+          { title: 'refactor: migrate to new API endpoints', branch: 'refactor/api-v2' },
+          { title: 'feat: implement user dashboard', branch: 'feat/user-dashboard' },
+          { title: 'chore: update dependencies', branch: 'chore/deps-update' }
+        ];
+
+        for (const feat of features) {
+          await createBranch(feat.branch, "main");
+          await commit(feat.branch, feat.title);
+          await commit(feat.branch, `more work on ${feat.branch}`);
+        }
+        
+        await captureSnapshot("Team Simulation Complete");
+        sendLog(`Team Simulation complete! View the real repo here: https://gitlab.com/projects/${projectId}`);
+      } else if (phase === 'conflict') {
+        sendLog("Creating new GitLab project for conflict simulation...");
+        const projectName = `gitflow-ai-sim-conflict-${Date.now()}`;
+        const createRes = await fetch("https://gitlab.com/api/v4/projects", {
+          method: "POST",
+          headers: { "PRIVATE-TOKEN": token, "Content-Type": "application/json" },
+          body: JSON.stringify({ name: projectName, visibility: "private", default_branch: "main" })
+        });
+        if (!createRes.ok) throw new Error(`Failed to create project: ${await createRes.text()}`);
+        const project = await createRes.json();
+        projectId = String(project.id);
+        sendLog(`Project created: ${project.web_url}`);
+        res.write(`data: ${JSON.stringify({ type: 'projectId', projectId })}\n\n`);
+
+        const initialConfig = `export const config = {\n  apiUrl: "https://api.example.com",\n  timeout: 1000\n};`;
+        await commit("main", "Initial commit", initialConfig, "src/config.ts");
+
+        await createBranch("feat/core-config", "main");
+        const featConfig = `export const config = {\n  apiUrl: "https://api.example.com",\n  timeout: 5000,\n  retries: 3,\n};`;
+        await commit("feat/core-config", "feat: update core config", featConfig, "src/config.ts");
+
+        sendLog(`$ git checkout main`);
+        const mainConfig = `export const config = {\n  apiUrl: "https://api.example.com",\n  timeout: 10000,\n  enableCache: true,\n};`;
+        await commit("main", "chore: update timeout on main", mainConfig, "src/config.ts");
+        
+        await captureSnapshot("Conflict Simulation Complete");
+        sendLog(`Conflict Simulation complete! View the real repo here: https://gitlab.com/projects/${projectId}`);
       } else {
-        throw new Error("Invalid phase. Use phase=A or phase=B");
+        throw new Error("Invalid phase. Use phase=A, phase=B, phase=team, or phase=conflict");
       }
       
       sendLog("DONE");
@@ -629,14 +705,20 @@ A pull request titled "${prTitle}" has merge conflicts.
 Here are the files with conflicts:
 ${JSON.stringify(files, null, 2)}
 
-Please resolve the conflicts. Return a JSON object with this exact structure:
+Your task is to resolve the git merge conflicts in these files.
+Look for standard git conflict markers (<<<<<<<, =======, >>>>>>>).
+Carefully analyze the changes from both HEAD and the incoming branch.
+Determine the best way to integrate the changes. Sometimes you need to keep both, sometimes one supersedes the other, and sometimes you need to write a custom integration.
+
+Please resolve the conflicts and return a JSON object with this exact structure:
 {
   "resolvedFiles": [
     { "name": "filename", "content": "resolved content without conflict markers" }
   ],
   "logs": ["log message 1", "log message 2"]
 }
-Do not include any markdown formatting like \`\`\`json in your response. Just return the raw JSON.
+Make sure the "content" field contains the FULL resolved file content, with NO conflict markers remaining.
+Provide detailed logs explaining how you resolved each conflict.
 `;
 
       const response = await ai.models.generateContent({
@@ -647,7 +729,17 @@ Do not include any markdown formatting like \`\`\`json in your response. Just re
         }
       });
 
-      const result = JSON.parse(response.text || "{}");
+      let responseText = response.text || "{}";
+      if (responseText.startsWith('```json')) {
+        responseText = responseText.substring(7);
+      } else if (responseText.startsWith('```')) {
+        responseText = responseText.substring(3);
+      }
+      if (responseText.endsWith('```')) {
+        responseText = responseText.substring(0, responseText.length - 3);
+      }
+
+      const result = JSON.parse(responseText.trim());
       res.json(result);
     } catch (error: any) {
       console.error("Error resolving conflict:", error);
@@ -683,7 +775,17 @@ Provide a semantic analysis of the changes. Return a JSON object with this exact
         }
       });
 
-      const result = JSON.parse(response.text || "{}");
+      let responseText = response.text || "{}";
+      if (responseText.startsWith('```json')) {
+        responseText = responseText.substring(7);
+      } else if (responseText.startsWith('```')) {
+        responseText = responseText.substring(3);
+      }
+      if (responseText.endsWith('```')) {
+        responseText = responseText.substring(0, responseText.length - 3);
+      }
+
+      const result = JSON.parse(responseText.trim());
       res.json(result);
     } catch (error: any) {
       console.error("Error analyzing intent:", error);
@@ -718,7 +820,17 @@ Do not include any markdown formatting like \`\`\`json in your response. Just re
         }
       });
 
-      const result = JSON.parse(response.text || "{}");
+      let responseText = response.text || "{}";
+      if (responseText.startsWith('```json')) {
+        responseText = responseText.substring(7);
+      } else if (responseText.startsWith('```')) {
+        responseText = responseText.substring(3);
+      }
+      if (responseText.endsWith('```')) {
+        responseText = responseText.substring(0, responseText.length - 3);
+      }
+
+      const result = JSON.parse(responseText.trim());
       res.json(result);
     } catch (error: any) {
       console.error("Error running tests:", error);

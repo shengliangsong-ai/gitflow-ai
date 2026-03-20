@@ -66,7 +66,7 @@ export default function Roadmap() {
           </div>
 
           <div className="flex items-start gap-4 p-4 bg-zinc-950 rounded-xl border border-zinc-800/50">
-            <Clock className="w-6 h-6 text-indigo-400 shrink-0" />
+            <CheckCircle2 className="w-6 h-6 text-emerald-400 shrink-0" />
             <div>
               <h3 className="font-semibold text-white">Day 5: Advanced Merge Topologies</h3>
               <p className="text-sm text-zinc-400">Implement backend logic for N-Way Star Merge and Cascading Rebase scenarios.</p>
@@ -74,7 +74,7 @@ export default function Roadmap() {
           </div>
 
           <div className="flex items-start gap-4 p-4 bg-zinc-950 rounded-xl border border-zinc-800/50">
-            <Circle className="w-6 h-6 text-zinc-600 shrink-0" />
+            <CheckCircle2 className="w-6 h-6 text-emerald-400 shrink-0" />
             <div>
               <h3 className="font-semibold text-white">Day 6: End-to-End Testing & Polish</h3>
               <p className="text-sm text-zinc-400">Simulate full team workflows, fix edge cases in the AI merge logic, and refine the UI.</p>
@@ -82,7 +82,7 @@ export default function Roadmap() {
           </div>
 
           <div className="flex items-start gap-4 p-4 bg-zinc-950 rounded-xl border border-zinc-800/50">
-            <Circle className="w-6 h-6 text-zinc-600 shrink-0" />
+            <Clock className="w-6 h-6 text-indigo-400 shrink-0" />
             <div>
               <h3 className="font-semibold text-white">Day 7: Final Polish & Video Recording</h3>
               <p className="text-sm text-zinc-400">Record the Devpost submission video demonstrating the AI GitFlow.</p>
