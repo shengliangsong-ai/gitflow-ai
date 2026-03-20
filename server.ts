@@ -427,6 +427,75 @@ async function startServer() {
     }
   });
 
+  app.get("/api/gitlab/auto-merge", async (req, res) => {
+    res.setHeader('Content-Type', 'text/event-stream');
+    res.setHeader('Cache-Control', 'no-cache');
+    res.setHeader('Connection', 'keep-alive');
+    
+    const sendLog = (msg: string) => {
+      res.write(`data: ${JSON.stringify({ message: msg })}\n\n`);
+    };
+
+    try {
+      const projectId = req.query.projectId as string;
+      const token = process.env.GITLAB_ACCESS_TOKEN;
+      if (!token) throw new Error("GITLAB_ACCESS_TOKEN is not set.");
+      if (!projectId) throw new Error("projectId is required.");
+
+      sendLog(`$ git merge feat/core-config`);
+      await new Promise(r => setTimeout(r, 1000));
+      sendLog(`Auto-merging src/config.ts`);
+      sendLog(`CONFLICT (content): Merge conflict in src/config.ts`);
+      sendLog(`Automatic merge failed; starting AI conflict resolution...`);
+      
+      await new Promise(r => setTimeout(r, 1500));
+      sendLog(`Analyzing intent of both branches...`);
+      sendLog(`- main: increased timeout to 10000 and enabled cache`);
+      sendLog(`- feat/core-config: increased timeout to 5000 and added retries`);
+      
+      await new Promise(r => setTimeout(r, 2000));
+      sendLog(`AI Decision: Combine both configurations. Use the larger timeout (10000), keep enableCache, and add retries.`);
+      
+      const resolvedContent = `export const config = {
+  apiUrl: "https://api.example.com",
+  timeout: 10000,
+  retries: 3,
+  enableCache: true,
+};`;
+
+      sendLog(`AI resolved conflict in src/config.ts`);
+      
+      await new Promise(r => setTimeout(r, 1000));
+      sendLog(`$ git commit -m "Merge branch 'feat/core-config' into main (AI Resolved)"`);
+      
+      // Commit the resolved file to GitLab
+      const commitRes = await fetch(`https://gitlab.com/api/v4/projects/${projectId}/repository/commits`, {
+        method: "POST",
+        headers: { "PRIVATE-TOKEN": token, "Content-Type": "application/json" },
+        body: JSON.stringify({
+          branch: "main",
+          commit_message: "Merge branch 'feat/core-config' into main (AI Resolved)",
+          actions: [{ action: "update", file_path: "src/config.ts", content: resolvedContent }]
+        })
+      });
+      
+      if (!commitRes.ok) {
+        throw new Error(`Failed to commit resolved merge: ${await commitRes.text()}`);
+      }
+      
+      const data = await commitRes.json();
+      sendLog(`[main ${data.short_id}] Merge branch 'feat/core-config' into main (AI Resolved)`);
+      sendLog(`Merge successful! View the resolved repo here: https://gitlab.com/projects/${projectId}`);
+      
+      sendLog("DONE");
+    } catch (error: any) {
+      sendLog(`Error: ${error.message}`);
+      sendLog("DONE");
+    }
+    
+    res.end();
+  });
+
   app.get("/api/gitlab/benchmark", async (req, res) => {
     res.setHeader('Content-Type', 'text/event-stream');
     res.setHeader('Cache-Control', 'no-cache');
@@ -681,6 +750,7 @@ async function startServer() {
         
         await captureSnapshot("Conflict Simulation Complete");
         sendLog(`Conflict Simulation complete! View the real repo here: https://gitlab.com/projects/${projectId}`);
+        sendLog(`Type 'merge' to auto-resolve the conflict using AI.`);
       } else {
         throw new Error("Invalid phase. Use phase=A, phase=B, phase=team, or phase=conflict");
       }

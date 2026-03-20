@@ -143,8 +143,33 @@ export default function Terminal({ className = "h-[calc(100vh-8rem)]" }: { class
   priority <pr_id> <level> - Set PR priority (high, normal, low)
   reorder <pr_id> <pos>    - Reorder a PR in the queue (set queuePosition)
   benchmark <phase>        - Run a benchmark phase (A, B, team, conflict)
+  merge                    - Auto-resolve conflicts and merge
   sync                     - Sync with GitHub
   clear                    - Clear terminal history`);
+          break;
+
+        case 'merge':
+          if (!projectId) {
+            addHistory('error', 'Project ID is missing. Run a benchmark phase first.');
+            break;
+          }
+          addHistory('output', `Starting AI auto-merge for project ${projectId}...`);
+          const mergeUrl = `/api/gitlab/auto-merge?projectId=${projectId}`;
+          const mergeEventSource = new EventSource(mergeUrl);
+          
+          mergeEventSource.onmessage = (event) => {
+            const data = JSON.parse(event.data);
+            if (data.message === "DONE") {
+              mergeEventSource.close();
+            } else {
+              addHistory('output', data.message);
+            }
+          };
+          
+          mergeEventSource.onerror = (error) => {
+            addHistory('error', 'Connection to merge server failed or ended.');
+            mergeEventSource.close();
+          };
           break;
 
         case 'benchmark':
