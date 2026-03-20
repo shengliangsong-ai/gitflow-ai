@@ -1,9 +1,10 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { collection, onSnapshot, query, addDoc, updateDoc, doc, serverTimestamp, getDocs } from 'firebase/firestore';
 import { db } from '../firebase';
 import { Branch, PullRequest } from '../types';
 import { GitBranch, GitPullRequest, GitMerge, Plus, RefreshCw, AlertCircle, CheckCircle2, Clock, Play, Zap } from 'lucide-react';
 import CreatePRModal from './CreatePRModal';
+import { createGitgraph, templateExtend, TemplateName } from '@gitgraph/js';
 
 export default function Dashboard() {
   const [branches, setBranches] = useState<Branch[]>([]);
@@ -16,6 +17,8 @@ export default function Dashboard() {
   const [isCreatingProject, setIsCreatingProject] = useState(false);
   const [newProjectName, setNewProjectName] = useState('');
   const [isLoadingBranches, setIsLoadingBranches] = useState(false);
+  const [commits, setCommits] = useState<any[]>([]);
+  const [isLoadingCommits, setIsLoadingCommits] = useState(false);
 
   useEffect(() => {
     // Fetch projects
@@ -95,7 +98,24 @@ export default function Dashboard() {
         setIsLoadingBranches(false);
       }
     };
+
+    const fetchCommits = async () => {
+      setIsLoadingCommits(true);
+      try {
+        const res = await fetch(`/api/gitlab/graph/${selectedProjectId}`);
+        if (res.ok) {
+          const data = await res.json();
+          setCommits(data);
+        }
+      } catch (error) {
+        console.error("Failed to fetch commits", error);
+      } finally {
+        setIsLoadingCommits(false);
+      }
+    };
+
     fetchBranches();
+    fetchCommits();
   }, [selectedProjectId]);
 
   const handleCreateProject = async () => {
@@ -334,25 +354,27 @@ export default function Dashboard() {
             {isLoadingBranches ? (
               <div className="text-center py-4 text-zinc-500 text-sm">Loading branches...</div>
             ) : (
-              ['primary', 'release', 'project'].map(type => (
-                <div key={type}>
-                  <h3 className="text-xs font-semibold text-zinc-500 uppercase tracking-wider mb-2">{type} Branches</h3>
-                  <div className="space-y-2">
-                    {branches.filter(b => b.type === type).length === 0 ? (
-                      <p className="text-sm text-zinc-600 italic">No {type} branches</p>
-                    ) : (
-                      branches.filter(b => b.type === type).map(branch => (
-                        <div key={branch.id} className="flex items-center justify-between p-3 bg-zinc-950 rounded-xl border border-zinc-800/50">
-                          <span className="font-mono text-sm">{branch.name}</span>
-                          <span className={`text-xs px-2 py-1 rounded-full ${branch.status === 'active' ? 'bg-emerald-500/10 text-emerald-400' : 'bg-zinc-800 text-zinc-400'}`}>
-                            {branch.status}
-                          </span>
-                        </div>
-                      ))
-                    )}
+              <>
+                {['primary', 'release', 'project'].map(type => (
+                  <div key={type}>
+                    <h3 className="text-xs font-semibold text-zinc-500 uppercase tracking-wider mb-2">{type} Branches</h3>
+                    <div className="space-y-2">
+                      {branches.filter(b => b.type === type).length === 0 ? (
+                        <p className="text-sm text-zinc-600 italic">No {type} branches</p>
+                      ) : (
+                        branches.filter(b => b.type === type).map(branch => (
+                          <div key={branch.id} className="flex items-center justify-between p-3 bg-zinc-950 rounded-xl border border-zinc-800/50">
+                            <span className="font-mono text-sm">{branch.name}</span>
+                            <span className={`text-xs px-2 py-1 rounded-full ${branch.status === 'active' ? 'bg-emerald-500/10 text-emerald-400' : 'bg-zinc-800 text-zinc-400'}`}>
+                              {branch.status}
+                            </span>
+                          </div>
+                        ))
+                      )}
+                    </div>
                   </div>
-                </div>
-              ))
+                ))}
+              </>
             )}
           </div>
         </div>
@@ -384,6 +406,20 @@ export default function Dashboard() {
 
       {/* Right Column: PR Queue */}
       <div className="lg:col-span-2 space-y-6">
+        <div className="bg-zinc-900 rounded-2xl border border-zinc-800 p-6">
+          <h2 className="text-lg font-semibold flex items-center gap-2 mb-4">
+            <GitBranch className="w-5 h-5 text-indigo-400" />
+            Git Tree View
+          </h2>
+          <div className="bg-zinc-950 p-4 rounded-xl border border-zinc-800/50 overflow-x-auto">
+            {isLoadingCommits ? (
+              <div className="text-center py-4 text-zinc-500 text-sm">Loading commit history...</div>
+            ) : (
+              <GitgraphWrapper commits={commits} />
+            )}
+          </div>
+        </div>
+
         <div className="bg-zinc-900 rounded-2xl border border-zinc-800 p-6 min-h-[600px]">
           <div className="flex items-center justify-between mb-6">
             <h2 className="text-lg font-semibold flex items-center gap-2">
@@ -513,3 +549,37 @@ export default function Dashboard() {
     </div>
   );
 }
+
+function GitgraphWrapper({ commits }: { commits: any[] }) {
+  const containerRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!containerRef.current) return;
+
+    // Clear previous graph
+    containerRef.current.innerHTML = '';
+
+    const gitgraph = createGitgraph(containerRef.current, {
+      template: templateExtend(TemplateName.Metro, {
+        colors: ['#6366f1', '#10b981', '#f43f5e', '#8b5cf6', '#ec4899'],
+        commit: { message: { displayAuthor: false, displayHash: true } }
+      })
+    });
+
+    if (commits && commits.length > 0) {
+      try {
+        gitgraph.import(commits);
+      } catch (err) {
+        console.error("Failed to import commits to gitgraph", err);
+        const master = gitgraph.branch("main");
+        master.commit("Error rendering git graph");
+      }
+    } else {
+      const master = gitgraph.branch("main");
+      master.commit("No commits found");
+    }
+  }, [commits]);
+
+  return <div ref={containerRef} />;
+}
+

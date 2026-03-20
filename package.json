@@ -12,7 +12,7 @@
     "start": "node server.ts"
   },
   "dependencies": {
-    "@gitgraph/react": "^1.6.0",
+    "@gitgraph/js": "^1.4.0",
     "@gitlab/application-sdk-browser": "^0.3.4",
     "@google/genai": "^1.29.0",
     "@tailwindcss/typography": "^0.5.19",
