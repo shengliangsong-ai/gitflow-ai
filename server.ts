@@ -240,20 +240,34 @@ async function startServer() {
 
       res.write(`data: ${JSON.stringify({ type: 'projectId', projectId: projectId.toString() })}\n\n`);
 
-      // 2. Clone GitHub repo and push to GitLab
       const execPromise = util.promisify(exec);
+
+      const authUrl = gitlabRepoUrl.replace('https://', `https://oauth2:${token}@`);
+      
+      const githubToken = process.env.GITHUB_TOKEN;
+      const githubRepoUrl = githubToken 
+        ? `https://${githubToken}@github.com/shengliangsong-ai/gitflow-ai.git`
+        : `https://github.com/shengliangsong-ai/gitflow-ai.git`;
+        
+      sendLog(`Checking if repositories are in sync...`);
+      const { stdout: gitlabRemote } = await execPromise(`git ls-remote ${authUrl} HEAD`).catch(() => ({ stdout: '' }));
+      const { stdout: githubRemote } = await execPromise(`git ls-remote ${githubRepoUrl} HEAD`).catch(() => ({ stdout: '' }));
+      
+      const gitlabCommit = gitlabRemote.split('\t')[0].trim();
+      const githubCommit = githubRemote.split('\t')[0].trim();
+
+      if (gitlabCommit && githubCommit && gitlabCommit === githubCommit) {
+        sendLog(`Repositories are already in sync (Commit: ${gitlabCommit.substring(0, 7)}). Skipping clone.`);
+        sendLog(`Successfully synced commits from GitHub to GitLab!`);
+        sendLog("DONE");
+        res.end();
+        return;
+      }
 
       const tempDir = fs.mkdtempSync(path.join(os.tmpdir(), 'gitflow-sync-'));
       sendLog(`Created temporary directory: ${tempDir}`);
 
       try {
-        const authUrl = gitlabRepoUrl.replace('https://', `https://oauth2:${token}@`);
-        
-        const githubToken = process.env.GITHUB_TOKEN;
-        const githubRepoUrl = githubToken 
-          ? `https://${githubToken}@github.com/shengliangsong-ai/gitflow-ai.git`
-          : `https://github.com/shengliangsong-ai/gitflow-ai.git`;
-        
         sendLog(`$ git clone <GITLAB_URL> .`);
         await execPromise(`git clone ${authUrl} .`, { cwd: tempDir });
         
