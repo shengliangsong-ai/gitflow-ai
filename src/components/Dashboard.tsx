@@ -1,16 +1,11 @@
 import React, { useState, useEffect } from 'react';
-import { User } from 'firebase/auth';
 import { collection, onSnapshot, query, addDoc, updateDoc, doc, serverTimestamp, getDocs } from 'firebase/firestore';
 import { db } from '../firebase';
 import { Branch, PullRequest } from '../types';
 import { GitBranch, GitPullRequest, GitMerge, Plus, RefreshCw, AlertCircle, CheckCircle2, Clock, Play, Zap } from 'lucide-react';
 import CreatePRModal from './CreatePRModal';
 
-interface DashboardProps {
-  user: User;
-}
-
-export default function Dashboard({ user }: DashboardProps) {
+export default function Dashboard() {
   const [branches, setBranches] = useState<Branch[]>([]);
   const [pullRequests, setPullRequests] = useState<PullRequest[]>([]);
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
@@ -129,7 +124,7 @@ export default function Dashboard({ user }: DashboardProps) {
     try {
       await addDoc(collection(db, 'pullRequests'), {
         ...data,
-        authorId: user.uid,
+        authorId: 'anonymous',
         status: 'code_review',
         priority: 'normal',
         queuePosition: Date.now(),

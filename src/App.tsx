@@ -1,6 +1,4 @@
 import React, { useEffect, useState } from 'react';
-import { auth, loginWithGoogle, logout } from './firebase';
-import { onAuthStateChanged, User } from 'firebase/auth';
 import { LogOut, GitMerge, Terminal as TerminalIcon, Map, LayoutDashboard, Command, FileText, Presentation as PresentationIcon } from 'lucide-react';
 import Dashboard from './components/Dashboard';
 import Terminal from './components/Terminal';
@@ -9,56 +7,14 @@ import LocalCLI from './components/LocalCLI';
 import Architecture from './components/Architecture';
 import Presentation from './components/Presentation';
 import BenchmarkDoc from './components/BenchmarkDoc';
-import { trackPageView, identifyUser } from './analytics';
+import { trackPageView } from './analytics';
 
 export default function App() {
-  const [user, setUser] = useState<User | null>(null);
-  const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState<'dashboard' | 'terminal' | 'roadmap' | 'cli' | 'architecture' | 'presentation' | 'benchmark'>('dashboard');
-
-  useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
-      setUser(currentUser);
-      if (currentUser) {
-        identifyUser(currentUser.uid, {
-          email: currentUser.email,
-          displayName: currentUser.displayName
-        });
-      }
-      setLoading(false);
-    });
-    return () => unsubscribe();
-  }, []);
 
   useEffect(() => {
     trackPageView(activeTab);
   }, [activeTab]);
-
-  if (loading) {
-    return <div className="min-h-screen flex items-center justify-center bg-zinc-950 text-white">Loading...</div>;
-  }
-
-  if (!user) {
-    return (
-      <div className="min-h-screen flex flex-col items-center justify-center bg-zinc-950 text-white">
-        <div className="max-w-md w-full p-8 bg-zinc-900 rounded-2xl shadow-xl border border-zinc-800 text-center">
-          <div className="flex justify-center mb-6">
-            <div className="p-4 bg-indigo-500/20 rounded-full">
-              <GitMerge className="w-12 h-12 text-indigo-400" />
-            </div>
-          </div>
-          <h1 className="text-3xl font-bold mb-2">AI Auto-Sync Queue</h1>
-          <p className="text-zinc-400 mb-8">GitLab Hackathon Project</p>
-          <button
-            onClick={loginWithGoogle}
-            className="w-full py-3 px-4 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl font-medium transition-colors"
-          >
-            Sign in with Google
-          </button>
-        </div>
-      </div>
-    );
-  }
 
   return (
     <div className="min-h-screen bg-zinc-950 text-zinc-100 font-sans">
@@ -128,23 +84,15 @@ export default function App() {
 
             <div className="flex items-center gap-4">
               <div className="flex items-center gap-2 text-sm text-zinc-400">
-                <img src={user.photoURL || ''} alt="Profile" className="w-8 h-8 rounded-full border border-zinc-700" />
-                <span className="hidden sm:inline-block">{user.displayName}</span>
+                <span className="hidden sm:inline-block">Guest User</span>
               </div>
-              <button
-                onClick={logout}
-                className="p-2 text-zinc-400 hover:text-white hover:bg-zinc-800 rounded-lg transition-colors"
-                title="Logout"
-              >
-                <LogOut className="w-5 h-5" />
-              </button>
             </div>
           </div>
         </div>
       </nav>
 
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {activeTab === 'dashboard' && <Dashboard user={user} />}
+        {activeTab === 'dashboard' && <Dashboard />}
         {activeTab === 'terminal' && <Terminal />}
         {activeTab === 'roadmap' && <Roadmap />}
         {activeTab === 'cli' && <LocalCLI />}
