@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Terminal, Download, Command, GitCommit, GitPullRequest, GitMerge, Copy, Check } from 'lucide-react';
+import { Terminal, Download, Command, GitCommit, GitPullRequest, GitMerge, Copy, Check, Github, Gitlab } from 'lucide-react';
 
 export default function LocalCLI() {
   const [copied, setCopied] = useState(false);
@@ -43,6 +43,35 @@ export default function LocalCLI() {
           >
             {copied ? <Check className="w-4 h-4 text-emerald-400" /> : <Copy className="w-4 h-4" />}
           </button>
+        </div>
+        
+        <h3 className="text-md font-semibold text-white mb-2 mt-8">Alternative: Install from Source</h3>
+        <p className="text-zinc-400 mb-4 text-sm">
+          You can also download the standalone script directly from our open-source repositories.
+        </p>
+        
+        <div className="space-y-4 mb-8">
+          <div>
+            <p className="text-zinc-300 text-sm mb-2 flex items-center gap-2">
+              <Github className="w-4 h-4" /> From GitHub
+            </p>
+            <div className="bg-zinc-950 border border-zinc-800 rounded-lg p-3">
+              <code className="text-emerald-400 font-mono text-sm block overflow-x-auto whitespace-nowrap">
+                curl -sL https://raw.githubusercontent.com/shengliangsong-ai/gitflow-ai/main/public/git-ai.js -o ~/.local/bin/git-ai && chmod +x ~/.local/bin/git-ai
+              </code>
+            </div>
+          </div>
+          
+          <div>
+            <p className="text-zinc-300 text-sm mb-2 flex items-center gap-2">
+              <Gitlab className="w-4 h-4" /> From GitLab
+            </p>
+            <div className="bg-zinc-950 border border-zinc-800 rounded-lg p-3">
+              <code className="text-emerald-400 font-mono text-sm block overflow-x-auto whitespace-nowrap">
+                curl -sL https://gitlab.com/shengliang.song.ai/gitflow-ai/-/raw/main/public/git-ai.js -o ~/.local/bin/git-ai && chmod +x ~/.local/bin/git-ai
+              </code>
+            </div>
+          </div>
         </div>
         
         <h3 className="text-md font-semibold text-white mb-2">Configure API Keys</h3>
