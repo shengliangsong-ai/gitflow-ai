@@ -18,6 +18,49 @@ async function startServer() {
     res.json({ status: "ok" });
   });
 
+  app.post("/api/cli/analyze-commit", async (req, res) => {
+    try {
+      const { diff } = req.body;
+      if (!diff) {
+        return res.status(400).json({ error: "No diff provided" });
+      }
+
+      const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
+      
+      const prompt = `You are an expert code reviewer. Review the following git diff.
+      Provide a concise summary of the changes and point out any obvious bugs, security issues, or bad practices.
+      If there are critical security issues or syntax errors that will break the build, set "blockCommit" to true.
+      Otherwise, set "blockCommit" to false.
+      
+      Git Diff:
+      ${diff}
+      
+      Respond in JSON format with two fields:
+      - "review": A string containing your concise markdown review.
+      - "blockCommit": A boolean indicating if the commit should be blocked.`;
+
+      const response = await ai.models.generateContent({
+        model: "gemini-3.1-pro-preview",
+        contents: prompt,
+        config: {
+          responseMimeType: "application/json",
+        }
+      });
+
+      let responseText = response.text || "{}";
+      const result = JSON.parse(responseText.trim());
+      
+      res.json(result);
+    } catch (error: any) {
+      console.error("Error analyzing commit:", error);
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  app.get("/api/cli/status", (req, res) => {
+    res.json({ waiting: 2, processing: 1 });
+  });
+
   const projectSnapshots = new Map<string, { title: string, commits: any[] }[]>();
 
   const fetchGitLabGraph = async (projectId: string, token: string) => {

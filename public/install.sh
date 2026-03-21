@@ -4,7 +4,7 @@ set -e
 echo "🚀 Installing AI GitFlow CLI..."
 
 # Use the URL passed to curl, or fallback to the shared URL
-BASE_URL="https://ais-pre-fpfgw42bursqbxaxpex54x-21086313823.us-west1.run.app"
+BASE_URL="https://gitflow-ai-836641670384.us-west1.run.app"
 
 INSTALL_DIR="$HOME/.local/bin"
 mkdir -p "$INSTALL_DIR"
