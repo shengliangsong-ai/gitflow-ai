@@ -27,12 +27,12 @@ export default function LocalCLI() {
       <div className="bg-zinc-900 border border-zinc-800 rounded-xl p-6 shadow-xl">
         <h2 className="text-lg font-semibold text-white mb-4 flex items-center gap-2">
           <Download className="w-5 h-5 text-indigo-400" />
-          Installation
+          Installation & Setup
         </h2>
         <p className="text-zinc-400 mb-4 text-sm">
           Run the following command in your terminal to install the <code className="text-indigo-300 bg-indigo-500/10 px-1 py-0.5 rounded">git-ai</code> CLI tool globally.
         </p>
-        <div className="flex items-center gap-3 bg-zinc-950 border border-zinc-800 rounded-lg p-3">
+        <div className="flex items-center gap-3 bg-zinc-950 border border-zinc-800 rounded-lg p-3 mb-6">
           <code className="text-emerald-400 flex-1 font-mono text-sm overflow-x-auto whitespace-nowrap">
             {installCommand}
           </code>
@@ -44,7 +44,25 @@ export default function LocalCLI() {
             {copied ? <Check className="w-4 h-4 text-emerald-400" /> : <Copy className="w-4 h-4" />}
           </button>
         </div>
-        <p className="text-xs text-zinc-500 mt-3">
+        
+        <h3 className="text-md font-semibold text-white mb-2">Configure API Keys</h3>
+        <p className="text-zinc-400 mb-4 text-sm">
+          Because this is a real, standalone tool, you must provide your own API keys. The keys are stored locally on your machine in <code className="text-zinc-300">~/.git-ai.json</code>.
+        </p>
+        <div className="space-y-3">
+          <div className="bg-zinc-950 border border-zinc-800 rounded-lg p-3">
+            <code className="text-zinc-300 font-mono text-sm">
+              <span className="text-indigo-400">git-ai</span> config set GEMINI_API_KEY <span className="text-zinc-500">&lt;your_gemini_key&gt;</span>
+            </code>
+          </div>
+          <div className="bg-zinc-950 border border-zinc-800 rounded-lg p-3">
+            <code className="text-zinc-300 font-mono text-sm">
+              <span className="text-indigo-400">git-ai</span> config set GIT_TOKEN <span className="text-zinc-500">&lt;your_github_or_gitlab_token&gt;</span>
+            </code>
+          </div>
+        </div>
+        
+        <p className="text-xs text-zinc-500 mt-4">
           Requires Node.js and Git to be installed on your system.
         </p>
       </div>
