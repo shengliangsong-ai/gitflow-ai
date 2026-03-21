@@ -4,7 +4,7 @@ import { Terminal, Download, Command, GitCommit, GitPullRequest, GitMerge, Copy,
 export default function LocalCLI() {
   const [copied, setCopied] = useState(false);
   
-  const installCommand = `curl -sL ${window.location.origin}/install.sh | bash`;
+  const installCommand = `curl -sL https://gitflow-ai-836641670384.us-west1.run.app/install.sh | bash`;
 
   const handleCopy = () => {
     navigator.clipboard.writeText(installCommand);
