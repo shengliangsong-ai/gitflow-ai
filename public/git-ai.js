@@ -61,9 +61,10 @@ if (command === 'config') {
   }
 }
 
-if (!command || command === 'help') {
-  console.log('\x1b[35m🤖 AI GitFlow CLI\x1b[0m');
+if (!command || command === 'help' || command === '--version' || command === '-v') {
+  console.log('\x1b[35m🤖 AI GitFlow CLI v1.0.0\x1b[0m');
   console.log('Integrates AI merge queues and automated reviews into your local git workflow.\n');
+  console.log('📖 Documentation & Usage: \x1b[36mhttps://github.com/shengliangsong-ai/gitflow-ai\x1b[0m\n');
   console.log('Usage: git-ai <command> [args]\n');
   console.log('Commands:');
   console.log('  config    Set up your API keys (GEMINI_API_KEY, GIT_TOKEN)');
