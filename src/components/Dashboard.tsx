@@ -1,6 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { collection, onSnapshot, query, addDoc, updateDoc, doc, serverTimestamp, getDocs } from 'firebase/firestore';
-import { db } from '../firebase';
+import { collection, onSnapshot, query, addDoc, updateDoc, doc, serverTimestamp, getDocs, db } from '../localDb';
 import { Branch, PullRequest } from '../types';
 import { GitBranch, GitPullRequest, GitMerge, Plus, RefreshCw, AlertCircle, CheckCircle2, Clock, Play, Zap, Users } from 'lucide-react';
 import CreatePRModal from './CreatePRModal';

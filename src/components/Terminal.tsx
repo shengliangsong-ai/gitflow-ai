@@ -1,6 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { collection, query, where, getDocs, updateDoc, doc, setDoc, onSnapshot } from 'firebase/firestore';
-import { db } from '../firebase';
+import { collection, query, where, getDocs, updateDoc, doc, setDoc, onSnapshot, db } from '../localDb';
 import { Terminal as TerminalIcon, GitBranch } from 'lucide-react';
 import { trackCliCommand } from '../analytics';
 import GitGraphView from './GitGraphView';
