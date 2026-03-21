@@ -164,8 +164,16 @@ export default function GitTree({ commits, onCommitClick }: GitTreeProps) {
             </div>
             
             <div className="flex-1 flex items-center gap-3 px-2 truncate">
-              <span className="text-zinc-500 w-16 flex-shrink-0">{commit.hash.substring(0, 7)}</span>
-              <span className="text-zinc-100 truncate flex-1" title={commit.body || commit.subject}>{commit.subject}</span>
+              <span 
+                className="text-indigo-400 hover:text-indigo-300 hover:underline cursor-pointer w-16 flex-shrink-0"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onCommitClick?.(commit);
+                }}
+              >
+                {commit.hash.substring(0, 7)}
+              </span>
+              <span className="text-zinc-100 truncate flex-1">{commit.subject}</span>
               {commit.refs && commit.refs.length > 0 && (
                 <div className="flex gap-1 flex-shrink-0">
                   {commit.refs.map(ref => {
@@ -179,9 +187,8 @@ export default function GitTree({ commits, onCommitClick }: GitTreeProps) {
                   })}
                 </div>
               )}
-              <span className="text-zinc-500 w-24 flex-shrink-0 truncate text-right">{commit.author.name}</span>
-              <span className="text-zinc-600 w-32 flex-shrink-0 text-right">
-                {new Date(commit.author.timestamp).toLocaleString()}
+              <span className="text-zinc-600 w-40 flex-shrink-0 text-right">
+                {new Date(commit.author.timestamp * 1000).toLocaleString()}
               </span>
             </div>
           </div>
