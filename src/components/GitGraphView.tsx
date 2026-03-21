@@ -66,7 +66,7 @@ export default function GitGraphView({ projectId }: GitGraphViewProps) {
   if (!projectId) {
     return (
       <div className="flex items-center justify-center h-full text-zinc-500 font-mono text-sm">
-        Click 'Start Phase A' to visualize the repository graph.
+        Select a project to visualize the repository graph.
       </div>
     );
   }

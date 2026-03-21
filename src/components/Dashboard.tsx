@@ -5,6 +5,7 @@ import { Branch, PullRequest } from '../types';
 import { GitBranch, GitPullRequest, GitMerge, Plus, RefreshCw, AlertCircle, CheckCircle2, Clock, Play, Zap, Users } from 'lucide-react';
 import CreatePRModal from './CreatePRModal';
 import { createGitgraph, templateExtend, TemplateName } from '@gitgraph/js';
+import GitGraphView from './GitGraphView';
 
 export default function Dashboard() {
   const [branches, setBranches] = useState<Branch[]>([]);
@@ -17,8 +18,6 @@ export default function Dashboard() {
   const [isCreatingProject, setIsCreatingProject] = useState(false);
   const [newProjectName, setNewProjectName] = useState('');
   const [isLoadingBranches, setIsLoadingBranches] = useState(false);
-  const [commits, setCommits] = useState<any[]>([]);
-  const [isLoadingCommits, setIsLoadingCommits] = useState(false);
 
   useEffect(() => {
     // Fetch projects
@@ -99,23 +98,7 @@ export default function Dashboard() {
       }
     };
 
-    const fetchCommits = async () => {
-      setIsLoadingCommits(true);
-      try {
-        const res = await fetch(`/api/gitlab/graph/${selectedProjectId}`);
-        if (res.ok) {
-          const data = await res.json();
-          setCommits(data);
-        }
-      } catch (error) {
-        console.error("Failed to fetch commits", error);
-      } finally {
-        setIsLoadingCommits(false);
-      }
-    };
-
     fetchBranches();
-    fetchCommits();
   }, [selectedProjectId]);
 
   const handleCreateProject = async () => {
@@ -472,12 +455,8 @@ export default function Dashboard() {
             <GitBranch className="w-5 h-5 text-indigo-400" />
             Git Tree View
           </h2>
-          <div className="bg-zinc-950 p-4 rounded-xl border border-zinc-800/50 overflow-x-auto">
-            {isLoadingCommits ? (
-              <div className="text-center py-4 text-zinc-500 text-sm">Loading commit history...</div>
-            ) : (
-              <GitgraphWrapper commits={commits} />
-            )}
+          <div className="bg-zinc-950 rounded-xl border border-zinc-800/50 overflow-hidden h-[600px]">
+            <GitGraphView projectId={selectedProjectId} />
           </div>
         </div>
 
@@ -497,6 +476,7 @@ export default function Dashboard() {
               <div className="text-center py-12 text-zinc-500">
                 <GitPullRequest className="w-12 h-12 mx-auto mb-3 opacity-20" />
                 <p>No pull requests in the queue.</p>
+                <p className="text-sm mt-2">Click "Simulate Team Activity" or "Simulate Conflict" to see the AI Merge Queue in action.</p>
               </div>
             ) : (
               sortedPRs.map(pr => (
@@ -611,36 +591,5 @@ export default function Dashboard() {
   );
 }
 
-function GitgraphWrapper({ commits }: { commits: any[] }) {
-  const containerRef = useRef<HTMLDivElement>(null);
 
-  useEffect(() => {
-    if (!containerRef.current) return;
-
-    // Clear previous graph
-    containerRef.current.innerHTML = '';
-
-    const gitgraph = createGitgraph(containerRef.current, {
-      template: templateExtend(TemplateName.Metro, {
-        colors: ['#6366f1', '#10b981', '#f43f5e', '#8b5cf6', '#ec4899'],
-        commit: { message: { displayAuthor: false, displayHash: true } }
-      })
-    });
-
-    if (commits && commits.length > 0) {
-      try {
-        gitgraph.import(commits);
-      } catch (err) {
-        console.error("Failed to import commits to gitgraph", err);
-        const master = gitgraph.branch("main");
-        master.commit("Error rendering git graph");
-      }
-    } else {
-      const master = gitgraph.branch("main");
-      master.commit("No commits found");
-    }
-  }, [commits]);
-
-  return <div ref={containerRef} />;
-}
 
