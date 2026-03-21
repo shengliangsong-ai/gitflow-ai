@@ -9,13 +9,20 @@ GitFlow AI is an advanced, AI-powered Git workflow simulator and auto-merging to
 - **Interactive CLI Terminal**: A built-in terminal to simulate team activity, trigger conflicts, and run AI auto-merges.
 - **Live Architecture & Roadmap**: Visualizes the system architecture and future roadmap.
 
-## Prerequisites
+## 🚀 Running Locally on a Private Company Network
+
+GitFlow AI is designed to be easily cloned and run locally. This is ideal for enterprise teams who want to run the application behind a corporate firewall or within a private company network.
+
+### Minimum Requirements
 To run this project locally, you will need:
 - Node.js (v18 or higher)
 - npm or yarn
-- A GitLab Personal Access Token (with `api` scope)
-- A Google Gemini API Key
-- Firebase Configuration (if using the live database features)
+- Git installed on your machine
+
+### Required API Keys
+You will need to generate two API tokens to allow the AI to analyze your code and interact with your repositories:
+1. **Google Gemini API Key:** Get this for free from [Google AI Studio](https://aistudio.google.com/).
+2. **GitLab (or GitHub) Personal Access Token:** Generate a token from your GitLab/GitHub account settings with `api` and `read_repository` permissions.
 
 ## Installation
 
@@ -33,20 +40,20 @@ To run this project locally, you will need:
 3. Set up environment variables:
    Create a `.env` file in the root directory and add the following:
    ```env
-   GEMINI_API_KEY=your_gemini_api_key
-   GITLAB_TOKEN=your_gitlab_personal_access_token
+   VITE_GEMINI_API_KEY=your_gemini_api_key
+   VITE_GITLAB_TOKEN=your_gitlab_personal_access_token
    ```
    *(Note: The app also uses Firebase. Ensure your `firebase-applet-config.json` is present in the `src` directory if you are using the live database features.)*
 
 ## Running the Application
 
-Start the development server (which runs both the Express backend and Vite frontend):
+Start the local development server (which runs both the Express backend and Vite frontend):
 
 ```bash
 npm run dev
 ```
 
-The application will be available at `http://localhost:3000`.
+The application will be available at `http://localhost:3000`. Because it runs locally, your source code remains secure within your private network, only communicating outward to the Gemini and GitLab APIs.
 
 ## Building for Production
 
@@ -69,6 +76,29 @@ npm run start
 4. Run `benchmark conflict` to simulate a merge conflict scenario.
 5. When prompted, type `merge` to trigger the AI auto-merge and conflict resolution process.
 6. Check the **Architecture** tab to see the live Git graph updates.
+
+## 🎬 Pitch Video Script (Under 3 Minutes)
+
+**[0:00 - 0:25] The Hook & The Experiment**
+"Hi everyone! Welcome to GitFlow AI. For this Hackathon, I ran an experiment as a solo developer: I gave Google AI Studio the same prompt twice to see how it would independently architect a solution. My other submission is Approach A. This is **Approach B**—a highly visual take on automating the Software Development Lifecycle."
+
+**[0:25 - 1:10] The Demo: AI Merge Queue**
+*(Visual: Click "Simulate Team Activity")*
+"Managing merge queues and conflicts takes hours of manual toil. Approach B solves this by acting as an intelligent orchestrator. 
+
+Let's click 'Simulate Team Activity'. Mock pull requests flood into our **AI Merge Queue**. Instantly, the AI performs a 'Semantic Intent Analysis.' It reads the code, summarizes the developer's actual goal, and assigns a Risk Level. If the risk is low, the AI automatically merges it. It completely removes the manual bottleneck for routine updates."
+
+**[1:10 - 1:50] The Demo: Conflict Resolution**
+*(Visual: Click "Simulate Conflict")*
+"But what happens during a code collision? Let's click 'Simulate Conflict'. Two developers just modified the exact same lines of code. 
+
+Normally, this breaks the pipeline. But our AI Agent catches the conflict, analyzes the context of both changes, intelligently resolves the collision, and completes the merge automatically. You can see the exact history updating live in our Git Tree View."
+
+**[1:50 - 2:20] Deployment & Conclusion**
+*(Visual: Show the README or Settings page mentioning API keys)*
+"Best of all, enterprise teams can run this entirely offline on a private company network. Just clone the repo, plug in your Google Gemini API key and your GitLab token, and you are ready to go. 
+
+Approach B proves that AI can architect creative, secure user experiences to solve complex DevOps problems. Thank you for checking out GitFlow AI!"
 
 ## License
 
