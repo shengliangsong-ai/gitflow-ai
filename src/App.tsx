@@ -7,10 +7,11 @@ import LocalCLI from './components/LocalCLI';
 import Architecture from './components/Architecture';
 import Presentation from './components/Presentation';
 import BenchmarkDoc from './components/BenchmarkDoc';
+import TestingInstructions from './components/TestingInstructions';
 import { trackPageView } from './analytics';
 
 export default function App() {
-  const [activeTab, setActiveTab] = useState<'dashboard' | 'terminal' | 'roadmap' | 'cli' | 'architecture' | 'presentation' | 'benchmark'>('dashboard');
+  const [activeTab, setActiveTab] = useState<'dashboard' | 'terminal' | 'roadmap' | 'cli' | 'architecture' | 'presentation' | 'benchmark' | 'testing'>('dashboard');
   const [isSyncing, setIsSyncing] = useState(false);
 
   useEffect(() => {
@@ -128,6 +129,13 @@ export default function App() {
                   <PresentationIcon className="w-4 h-4" />
                   Pitch
                 </button>
+                <button
+                  onClick={() => setActiveTab('testing')}
+                  className={`flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium transition-colors ${activeTab === 'testing' ? 'bg-zinc-800 text-white' : 'text-zinc-400 hover:text-white hover:bg-zinc-800/50'}`}
+                >
+                  <FileText className="w-4 h-4" />
+                  Testing
+                </button>
               </div>
             </div>
 
@@ -155,6 +163,7 @@ export default function App() {
         {activeTab === 'architecture' && <Architecture />}
         {activeTab === 'benchmark' && <BenchmarkDoc />}
         {activeTab === 'presentation' && <Presentation />}
+        {activeTab === 'testing' && <TestingInstructions />}
       </main>
     </div>
   );

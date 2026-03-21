@@ -73,7 +73,7 @@ const slides = [
     id: 4,
     title: "Semantic Orchestration Layer",
     icon: <Sparkles className="w-12 h-12 text-purple-400" />,
-    speechText: "We've taken it a step further with our Semantic Orchestration Layer powered by Gemini 3 point 1 Pro. Instead of blindly testing code, our A I performs Semantic Intent Analysis to understand what the code actually does. It calculates risk levels, detects logical conflicts across files, and allows developers to orchestrate the queue directly from the C L I. We even support Advanced Merge Topologies like N-Way Star Merge and Cascading Rebase. It's not just a queue; it's an intelligent traffic controller for your codebase.",
+    speechText: "Powered by Gemini 3 point 1 Pro, our A I understands what your code actually does. It calculates risk levels, detects logical conflicts, and supports advanced merge topologies. It's not just a queue; it's an intelligent traffic controller for your codebase.",
     content: (
       <div className="space-y-6 text-xl text-zinc-300">
         <p>Moving beyond basic CI/CD with <strong>Semantic Intent Analysis</strong> powered by Gemini 3.1 Pro.</p>
@@ -98,7 +98,7 @@ const slides = [
     id: 5,
     title: "Verifiable Trust: Built-in Benchmarks",
     icon: <Terminal className="w-12 h-12 text-emerald-400" />,
-    speechText: "But how do you know this actually works? We believe in verifiable trust. Anyone can clone our GitHub repository and simply type git-ai benchmark. This triggers a suite of automated self-tests that simulate complex, real-world merge conflicts—from simple line collisions to deep semantic refactoring conflicts. It runs our A I resolution engine against these scenarios, proving our accuracy and reliability right on your local machine. You don't have to take our word for it; you can prove it yourself.",
+    speechText: "How do you know this works? We believe in verifiable trust. Anyone can clone our repo and run our automated benchmark. It simulates complex, real-world merge conflicts and proves our A I's accuracy right on your machine. You don't have to take our word for it; you can prove it yourself.",
     content: (
       <div className="space-y-6 text-xl text-zinc-300">
         <p>Don't just take our word for it. Prove it yourself with <strong>Built-in Benchmarks</strong>.</p>
@@ -146,14 +146,14 @@ const slides = [
     id: 7,
     title: "Why This Wins",
     icon: <PresentationIcon className="w-12 h-12 text-indigo-400" />,
-    speechText: "Why does this win? Because we didn't just build a dashboard; we built a workflow integration. There is zero friction: developers don't need to learn a new U I, they just type git-ai instead of git. We have real-time sync using Firebase Firestore to ensure the C L I and Web Dashboard are always perfectly in sync. And we are data-driven, with GitLab Analytics S D K integration proving we are thinking about enterprise adoption from day one. Thank you, Judges!",
+    speechText: "Why does this win? Because we built a seamless workflow integration, not just another dashboard. Developers keep their existing habits with zero friction. Everything syncs in real-time, and we're enterprise-ready from day one. Thank you, Judges!",
     content: (
       <div className="space-y-6 text-xl text-zinc-300">
-        <p>We didn't just build a dashboard; we built a <strong>workflow integration</strong>.</p>
+        <p>We built a <strong>seamless workflow integration</strong>, not just a dashboard.</p>
         <ul className="list-disc pl-8 space-y-4">
-          <li><strong>Zero Friction:</strong> Developers don't need to learn a new UI. They just type <code className="text-indigo-300">git-ai</code> instead of <code className="text-indigo-300">git</code>.</li>
-          <li><strong>Real-time Sync:</strong> Firebase Firestore ensures the CLI and the Web Dashboard are always perfectly in sync.</li>
-          <li><strong>Data-Driven:</strong> GitLab Analytics SDK integration proves we are thinking about enterprise adoption and metrics from day one.</li>
+          <li><strong>Zero Friction:</strong> Developers keep their existing habits. Just type <code className="text-indigo-300">git-ai</code> instead of <code className="text-indigo-300">git</code>.</li>
+          <li><strong>Real-time Sync:</strong> CLI and Web Dashboard are always perfectly in sync.</li>
+          <li><strong>Enterprise-Ready:</strong> Built-in analytics and data-driven from day one.</li>
         </ul>
         <p className="text-emerald-400 font-semibold mt-8 text-2xl text-center">Thank you, Judges!</p>
       </div>
