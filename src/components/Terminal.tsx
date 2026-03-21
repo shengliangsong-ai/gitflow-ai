@@ -48,11 +48,19 @@ export default function Terminal({ className = "h-[calc(100vh-8rem)]" }: { class
         setProjectId(customEvent.detail.projectId);
       }
     };
+    const handleTerminalOutput = (e: Event) => {
+      const customEvent = e as CustomEvent;
+      if (customEvent.detail && customEvent.detail.content) {
+        addHistory(customEvent.detail.type || 'output', customEvent.detail.content);
+      }
+    };
     window.addEventListener('run-demo', handleRunDemo);
     window.addEventListener('set-project-id', handleSetProjectId);
+    window.addEventListener('terminal-output', handleTerminalOutput);
     return () => {
       window.removeEventListener('run-demo', handleRunDemo);
       window.removeEventListener('set-project-id', handleSetProjectId);
+      window.removeEventListener('terminal-output', handleTerminalOutput);
     };
   }, [projectId]);
 
@@ -378,12 +386,6 @@ Processing/Conflict: ${processing}`);
               className={`px-3 py-1.5 text-white text-xs font-medium rounded-lg transition-colors ${projectId ? 'bg-emerald-600 hover:bg-emerald-700' : 'bg-zinc-700 cursor-not-allowed text-zinc-400'}`}
             >
               Start Phase B (Merge)
-            </button>
-            <button 
-              onClick={syncGithub} 
-              className="px-3 py-1.5 bg-purple-600 hover:bg-purple-700 text-white text-xs font-medium rounded-lg transition-colors ml-2"
-            >
-              Sync GitHub
             </button>
             <button 
               onClick={resetDemo} 

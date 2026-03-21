@@ -32,6 +32,8 @@ export default function App() {
     if (isSyncing) return;
     setIsSyncing(true);
     
+    window.dispatchEvent(new CustomEvent('terminal-output', { detail: { type: 'output', content: 'Starting GitHub Sync...' } }));
+    
     const url = `/api/gitlab/sync-github`;
     const eventSource = new EventSource(url);
     
@@ -42,13 +44,15 @@ export default function App() {
       } else if (data.message === "DONE") {
         eventSource.close();
         setIsSyncing(false);
-        setActiveTab('terminal');
+      } else {
+        window.dispatchEvent(new CustomEvent('terminal-output', { detail: { type: 'output', content: data.message } }));
       }
     };
     
     eventSource.onerror = (error) => {
       eventSource.close();
       setIsSyncing(false);
+      window.dispatchEvent(new CustomEvent('terminal-output', { detail: { type: 'error', content: 'GitHub Sync Failed or Ended.' } }));
       alert("GitHub Sync Failed or Ended.");
     };
   };
@@ -143,7 +147,9 @@ export default function App() {
 
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {activeTab === 'dashboard' && <Dashboard />}
-        {activeTab === 'terminal' && <Terminal />}
+        <div style={{ display: activeTab === 'terminal' ? 'block' : 'none' }}>
+          <Terminal />
+        </div>
         {activeTab === 'roadmap' && <Roadmap />}
         {activeTab === 'cli' && <LocalCLI />}
         {activeTab === 'architecture' && <Architecture />}
