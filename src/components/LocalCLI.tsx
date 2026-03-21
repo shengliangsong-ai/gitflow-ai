@@ -1,10 +1,17 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Terminal, Download, Command, GitCommit, GitPullRequest, GitMerge, Copy, Check, Github, Gitlab } from 'lucide-react';
 
 export default function LocalCLI() {
   const [copied, setCopied] = useState(false);
+  const [origin, setOrigin] = useState('https://gitflow-ai-836641670384.us-west1.run.app');
   
-  const installCommand = `curl -sL https://ais-pre-fpfgw42bursqbxaxpex54x-21086313823.us-west1.run.app/install.sh | bash`;
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      setOrigin(window.location.origin);
+    }
+  }, []);
+  
+  const installCommand = `curl -sL ${origin}/install.sh | bash -s ${origin}`;
 
   const handleCopy = () => {
     navigator.clipboard.writeText(installCommand);

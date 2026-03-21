@@ -3,13 +3,13 @@ set -e
 
 echo "🚀 Installing AI GitFlow CLI..."
 
-# Use the URL passed to curl, or fallback to the shared URL
-BASE_URL="https://ais-pre-fpfgw42bursqbxaxpex54x-21086313823.us-west1.run.app"
+# Use the URL passed as the first argument, or fallback to the default
+BASE_URL="${1:-https://gitflow-ai-836641670384.us-west1.run.app}"
 
 INSTALL_DIR="$HOME/.local/bin"
 mkdir -p "$INSTALL_DIR"
 
-echo "⬇️ Downloading git-ai..."
+echo "⬇️ Downloading git-ai from $BASE_URL..."
 curl -sL "$BASE_URL/git-ai.js" -o "$INSTALL_DIR/git-ai"
 
 # Make it executable
