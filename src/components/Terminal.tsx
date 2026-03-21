@@ -42,8 +42,18 @@ export default function Terminal({ className = "h-[calc(100vh-8rem)]" }: { class
         runDemo(customEvent.detail.phase);
       }
     };
+    const handleSetProjectId = (e: Event) => {
+      const customEvent = e as CustomEvent;
+      if (customEvent.detail && customEvent.detail.projectId) {
+        setProjectId(customEvent.detail.projectId);
+      }
+    };
     window.addEventListener('run-demo', handleRunDemo);
-    return () => window.removeEventListener('run-demo', handleRunDemo);
+    window.addEventListener('set-project-id', handleSetProjectId);
+    return () => {
+      window.removeEventListener('run-demo', handleRunDemo);
+      window.removeEventListener('set-project-id', handleSetProjectId);
+    };
   }, [projectId]);
 
   const addHistory = (type: 'input' | 'output' | 'error', content: string) => {

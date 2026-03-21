@@ -124,12 +124,21 @@ const slides = [
   },
   {
     id: 6,
-    title: "Live Demo: AI GitFlow Benchmark",
+    title: "Live Demo: Real-Time & Real APIs",
     icon: <Terminal className="w-12 h-12 text-cyan-400" />,
-    speechText: "Let's see it in action. This is our live benchmark demo. In Phase A, we simulate parallel development by creating a new repository and branching out multiple components. In Phase B, our AI orchestrates the merge process, automatically resolving conflicts and creating a clean, linear history. You can start the demo right from this terminal.",
+    speechText: "Let's see it in action. This is our live benchmark demo. Importantly, our project source itself is the real-time live demo. When you click 'Sync Github', it automatically syncs the source code from GitHub to GitLab using real GitHub tokens and APIs—this is not a simulation or a mock. The Git Tree View dashboard allows judges to see the source code directly in real-time.",
     content: (
-      <div className="w-full h-full -mt-4">
-        <TerminalComponent className="h-[500px]" />
+      <div className="w-full h-full -mt-4 space-y-4">
+        <div className="bg-cyan-500/10 border border-cyan-500/30 p-4 rounded-lg mb-4">
+          <p className="text-cyan-300 font-semibold flex items-center gap-2">
+            <Sparkles className="w-5 h-5" />
+            Our project source itself is the real-time live demo!
+          </p>
+          <p className="text-zinc-300 text-sm mt-2">
+            "Sync Github" uses <strong>real GitHub tokens and APIs</strong> (not a simulation nor mock) to sync source code to GitLab. The Git Tree View dashboard lets you see the source code live.
+          </p>
+        </div>
+        <TerminalComponent className="h-[400px]" />
       </div>
     )
   },

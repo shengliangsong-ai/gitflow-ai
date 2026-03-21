@@ -37,10 +37,12 @@ export default function App() {
     
     eventSource.onmessage = (event) => {
       const data = JSON.parse(event.data);
-      if (data.message === "DONE") {
+      if (data.type === 'projectId') {
+        window.dispatchEvent(new CustomEvent('set-project-id', { detail: { projectId: data.projectId } }));
+      } else if (data.message === "DONE") {
         eventSource.close();
         setIsSyncing(false);
-        alert("GitHub Sync Completed Successfully!");
+        setActiveTab('terminal');
       }
     };
     

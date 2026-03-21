@@ -180,8 +180,8 @@ export default function GitTree({ commits, onCommitClick }: GitTreeProps) {
                 </div>
               )}
               <span className="text-zinc-500 w-24 flex-shrink-0 truncate text-right">{commit.author.name}</span>
-              <span className="text-zinc-600 w-24 flex-shrink-0 text-right">
-                {new Date(commit.author.timestamp).toLocaleDateString()}
+              <span className="text-zinc-600 w-32 flex-shrink-0 text-right">
+                {new Date(commit.author.timestamp).toLocaleString()}
               </span>
             </div>
           </div>
