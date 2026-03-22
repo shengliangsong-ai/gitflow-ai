@@ -156,6 +156,22 @@ export default function LocalCLI() {
 
         <div className="bg-zinc-900 border border-zinc-800 rounded-xl p-6 shadow-xl">
           <h2 className="text-lg font-semibold text-white mb-4 flex items-center gap-2">
+            <GitCommit className="w-5 h-5 text-indigo-400" />
+            AI Cherry-Pick
+          </h2>
+          <p className="text-zinc-400 text-sm mb-4">
+            Run <code className="text-indigo-300">git-ai cherry-pick &lt;hash&gt;</code> to apply specific commits with AI conflict resolution.
+          </p>
+          <div className="bg-zinc-950 border border-zinc-800 rounded-lg p-4 font-mono text-sm">
+            <div className="text-zinc-500">$ git-ai cherry-pick a1b2c3d</div>
+            <div className="text-fuchsia-400 mt-2">[AI GitFlow] Intercepting git cherry-pick...</div>
+            <div className="text-cyan-400">🍒 AI is monitoring your cherry-pick for conflict resolution...</div>
+            <div className="text-zinc-300 mt-1">[main a1b2c3d] Applied specific commit changes</div>
+          </div>
+        </div>
+
+        <div className="bg-zinc-900 border border-zinc-800 rounded-xl p-6 shadow-xl">
+          <h2 className="text-lg font-semibold text-white mb-4 flex items-center gap-2">
             <Command className="w-5 h-5 text-indigo-400" />
             Queue Status
           </h2>

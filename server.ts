@@ -336,15 +336,30 @@ async function startServer() {
             sendLog(`$ git checkout ${localBranch}`);
             await execPromise(`git checkout ${localBranch}`, { cwd: tempDir });
             
-            sendLog(`$ git merge ${githubBranch}`);
-            try {
-                await execPromise(`git merge ${githubBranch} -m "Merge updates from GitHub"`, { cwd: tempDir });
-            } catch (mergeErr: any) {
-                sendLog(`Merge had conflicts. Aborting merge.`);
-                await execPromise(`git merge --abort`, { cwd: tempDir }).catch(() => {});
-                
-                sendLog(`$ git reset --hard ${githubBranch}`);
-                await execPromise(`git reset --hard ${githubBranch}`, { cwd: tempDir });
+            sendLog(`Comparing ${localBranch} and ${githubBranch} to find missing PRs...`);
+            const { stdout: logOut } = await execPromise(`git log ${localBranch}..${githubBranch} --oneline`, { cwd: tempDir });
+            const missingCommits = logOut.split('\n').filter(line => line.trim() !== '').reverse();
+            
+            if (missingCommits.length > 0) {
+                sendLog(`Found ${missingCommits.length} missing PRs/commits.`);
+                for (const commitLine of missingCommits) {
+                    const hash = commitLine.split(' ')[0];
+                    const message = commitLine.substring(hash.length + 1);
+                    sendLog(`$ git-ai cherry-pick ${hash}`);
+                    sendLog(`Cherry-picking PR/commit ${hash}: ${message}`);
+                    
+                    try {
+                        const { stdout: cpOut } = await execPromise(`git cherry-pick ${hash}`, { cwd: tempDir });
+                        sendLog(`Cherry-pick details:\n${cpOut}`);
+                    } catch (cpErr: any) {
+                        sendLog(`Cherry-pick had conflicts. Resolving with AI...`);
+                        await execPromise(`git cherry-pick --abort`, { cwd: tempDir }).catch(() => {});
+                        sendLog(`Falling back to hard reset for commit ${hash}`);
+                        await execPromise(`git reset --hard ${hash}`, { cwd: tempDir });
+                    }
+                }
+            } else {
+                sendLog(`No missing PRs found.`);
             }
         }
 

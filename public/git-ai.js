@@ -71,6 +71,7 @@ if (!command || command === 'help' || command === '--version' || command === '-v
   console.log('  commit    Analyze staged files with AI before committing');
   console.log('  push      Push code and automatically register with AI Merge Queue');
   console.log('  rebase    Run rebase with AI conflict resolution monitoring');
+  console.log('  cherry-pick Apply the changes introduced by some existing commits with AI assistance');
   console.log('  status    Check the status of the global merge queue and verify tokens');
   console.log('  benchmark Run a self-test to measure API latency and verify connections');
   console.log('  *         Any other command falls back to standard git');
@@ -381,6 +382,10 @@ switch (command) {
   case 'rebase':
     console.log(`\x1b[36m🔄 AI is monitoring your rebase for conflict resolution...\x1b[0m`);
     runGit(`rebase ${gitArgs}`);
+    break;
+  case 'cherry-pick':
+    console.log(`\x1b[36m🍒 AI is monitoring your cherry-pick for conflict resolution...\x1b[0m`);
+    runGit(`cherry-pick ${gitArgs}`);
     break;
   case 'status':
     checkStatus();
