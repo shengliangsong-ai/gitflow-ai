@@ -37,8 +37,8 @@ export const SvgDiagram = () => (
 
     {/* Orchestrator */}
     <rect x="325" y="60" width="150" height="80" rx="8" fill="url(#grad1)" />
-    <text x="400" y="95" fill="white" fontSize="16" fontWeight="bold" textAnchor="middle" dominantBaseline="middle">AI Orchestrator</text>
-    <text x="400" y="115" fill="white" fontSize="12" textAnchor="middle" dominantBaseline="middle">(Node.js/Express)</text>
+    <text x="400" y="95" fill="white" fontSize="16" fontWeight="bold" textAnchor="middle" dominantBaseline="middle">GitFlow CLI</text>
+    <text x="400" y="115" fill="white" fontSize="12" textAnchor="middle" dominantBaseline="middle">(State Branch Sync)</text>
 
     {/* Gemini Engine */}
     <rect x="325" y="260" width="150" height="80" rx="8" fill="url(#grad1)" />
@@ -47,8 +47,8 @@ export const SvgDiagram = () => (
 
     {/* Database */}
     <rect x="600" y="60" width="150" height="80" rx="8" fill="url(#grad3)" />
-    <text x="675" y="95" fill="white" fontSize="16" fontWeight="bold" textAnchor="middle" dominantBaseline="middle">Local Database</text>
-    <text x="675" y="115" fill="white" fontSize="12" textAnchor="middle" dominantBaseline="middle">(State/Logs)</text>
+    <text x="675" y="95" fill="white" fontSize="16" fontWeight="bold" textAnchor="middle" dominantBaseline="middle">gitflow-audit Repo</text>
+    <text x="675" y="115" fill="white" fontSize="12" textAnchor="middle" dominantBaseline="middle">(Audit & Context)</text>
 
     {/* UI */}
     <rect x="600" y="260" width="150" height="80" rx="8" fill="url(#grad2)" />
@@ -57,7 +57,7 @@ export const SvgDiagram = () => (
 
     {/* Edges */}
     <path d="M 200 200 L 325 100" stroke="#a1a1aa" strokeWidth="2" fill="none" markerEnd="url(#arrow)" />
-    <text x="240" y="140" fill="#a1a1aa" fontSize="12" transform="rotate(-35, 240, 140)">Webhooks</text>
+    <text x="240" y="140" fill="#a1a1aa" fontSize="12" transform="rotate(-35, 240, 140)">Git Hooks</text>
 
     <path d="M 380 140 L 380 260" stroke="#a1a1aa" strokeWidth="2" fill="none" markerEnd="url(#arrow)" />
     <text x="370" y="200" fill="#a1a1aa" fontSize="12" transform="rotate(-90, 370, 200)">Analyzes Intent</text>
@@ -65,10 +65,10 @@ export const SvgDiagram = () => (
     <path d="M 420 260 L 420 140" stroke="#a1a1aa" strokeWidth="2" fill="none" markerEnd="url(#arrow)" />
 
     <path d="M 475 100 L 600 100" stroke="#a1a1aa" strokeWidth="2" fill="none" markerEnd="url(#arrow)" />
-    <text x="537" y="90" fill="#a1a1aa" fontSize="12" textAnchor="middle">State Sync</text>
+    <text x="537" y="90" fill="#a1a1aa" fontSize="12" textAnchor="middle">Audit Sync</text>
 
     <path d="M 675 140 L 675 260" stroke="#a1a1aa" strokeWidth="2" fill="none" markerEnd="url(#arrow)" />
-    <text x="685" y="200" fill="#a1a1aa" fontSize="12">Live Updates</text>
+    <text x="685" y="200" fill="#a1a1aa" fontSize="12">Reads Audit</text>
 
     <path d="M 600 300 L 475 300" stroke="#a1a1aa" strokeWidth="2" fill="none" markerEnd="url(#arrow)" />
     <text x="537" y="290" fill="#a1a1aa" fontSize="12" textAnchor="middle">Manual Overrides</text>
@@ -125,10 +125,11 @@ export default function Architecture() {
             The architecture is built on a reactive, event-driven model. It bridges the gap between traditional Git providers and advanced AI reasoning.
           </p>
           <ul className="list-disc pl-6 space-y-2 mt-4">
-            <li><strong>Git Providers:</strong> GitHub / GitLab integration via Webhooks.</li>
-            <li><strong>AI Orchestrator:</strong> Node.js / Express backend handling analysis and state sync.</li>
+            <li><strong>Git Providers:</strong> GitHub / GitLab integration via Webhooks and CLI.</li>
+            <li><strong>GitFlow CLI:</strong> Local engine handling analysis and GitOps state branch sync.</li>
             <li><strong>AI Reasoning Engine:</strong> Powered by Gemini 3.1 Pro. Analyzes the intent of changes to resolve logical conflicts.</li>
-            <li><strong>Persistence Layer:</strong> A local database acts as the global state coordinator, storing the merge queue, branch health, and semantic reasoning logs.</li>
+            <li><strong>State Branch:</strong> The <code>gitflow-ai-state</code> branch acts as the global queue coordinator, storing the merge queue state.</li>
+            <li><strong>Audit Repository:</strong> The <code>gitflow-audit</code> repo stores the immutable logs, conflict artifacts, and semantic reasoning context.</li>
             <li><strong>UI:</strong> React / Vite Dashboard for Live Updates.</li>
           </ul>
         </div>
@@ -267,38 +268,41 @@ export default function Architecture() {
             <h3 className="text-xl font-semibold text-zinc-200 mb-4">Mermaid Component Diagram</h3>
             <div className="bg-zinc-950 border border-zinc-800 rounded-lg p-6 overflow-x-auto">
               <Mermaid chart={`graph TD
-    subgraph Git Providers
-        A[GitHub / GitLab]
+    subgraph Local Environment
+        Dev[Developer]
+        CLI[GitFlow AI CLI]
+        LocalRepo[(Local Git Repository)]
+        LocalCache[(Local SQLite Cache)]
     end
 
-    subgraph AI Orchestrator
-        B[Node.js / Express]
-        C{Gemini 3.1 Pro Semantic Engine}
-        B <-->|Analyzes Intent| C
+    subgraph Remote Infrastructure
+        MainRepo[(Main Repository)]
+        StateBranch([Branch: gitflow-ai-state])
+        AuditRepo[(gitflow-audit Repository)]
+        Gemini[Google Gemini 3.1 Pro]
+        Dashboard[Web Dashboard]
     end
 
-    subgraph Persistence Layer
-        D[(Local Database)]
-    end
+    Dev -->|Runs git-ai commands| CLI
+    CLI <-->|Reads/Commits Code| LocalRepo
+    CLI -->|Fetches queue.json| StateBranch
+    CLI -->|Commits updated queue.json| StateBranch
+    LocalRepo -->|Pushes Code/PRs| MainRepo
+    CLI -->|Syncs Context & Logs| AuditRepo
+    CLI <-->|Reads/Writes Fast Cache| LocalCache
+    LocalCache -.->|Mirrors| AuditRepo
+    CLI <-->|Sends Diffs / Gets Resolutions| Gemini
+    Dashboard <-->|Visualizes Queue| StateBranch
+    Dashboard <-->|Reads Audit Logs| AuditRepo
+    Dashboard <-->|Analyzes Intent| Gemini
 
-    subgraph UI
-        E[React / Vite Dashboard]
-    end
-
-    A -->|Webhooks| B
-    B -->|State Sync| D
-    D -->|Live Updates| E
-    E -->|Manual Overrides| D
-
-    classDef provider fill:#18181b,stroke:#e24329,stroke-width:2px,color:#fff;
-    classDef orchestrator fill:#18181b,stroke:#6366f1,stroke-width:2px,color:#fff;
-    classDef db fill:#18181b,stroke:#f59e0b,stroke-width:2px,color:#fff;
-    classDef ui fill:#18181b,stroke:#10b981,stroke-width:2px,color:#fff;
-
-    class A provider;
-    class B,C orchestrator;
-    class D db;
-    class E ui;`} />
+    classDef repo fill:#18181b,stroke:#e24329,stroke-width:2px,color:#fff;
+    classDef ai fill:#18181b,stroke:#6366f1,stroke-width:2px,color:#fff;
+    classDef cli fill:#18181b,stroke:#10b981,stroke-width:2px,color:#fff;
+    
+    class MainRepo,AuditRepo,LocalRepo,StateBranch repo;
+    class Gemini ai;
+    class CLI,LocalCache cli;`} />
             </div>
           </div>
         </div>

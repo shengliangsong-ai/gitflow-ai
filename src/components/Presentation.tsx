@@ -97,9 +97,9 @@ const slides = [
   },
   {
     id: 4.5,
-    title: "System Architecture",
+    title: "100% GitOps Architecture",
     icon: <Network className="w-12 h-12 text-blue-400" />,
-    speechText: "Our architecture is built on a reactive, event-driven model. It bridges the gap between traditional Git providers and advanced A I reasoning. Webhooks from GitHub or GitLab trigger our Node dot j s orchestrator, which uses Gemini 3 point 1 Pro to analyze intent. The state is managed locally and synced in real-time to our React dashboard.",
+    speechText: "Our architecture is 100% GitOps native. We don't use a central database. The merge queue state is stored in a hidden gitflow A I state branch. All A I operations, conflict artifacts, and conversation context are synced to a dedicated gitflow audit repository. This provides an enterprise-grade, immutable audit log while keeping the C L I lightning fast.",
     content: (
       <div className="w-full h-full -mt-4 flex flex-col items-center justify-center">
         <div className="w-full max-w-4xl bg-zinc-950 border border-zinc-800 rounded-xl p-6">
