@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Presentation as PresentationIcon, ChevronRight, ChevronLeft, Play, Award, Zap, GitMerge, Terminal, StopCircle, Loader2, Sparkles, Clock, CheckCircle2 } from 'lucide-react';
+import { Presentation as PresentationIcon, ChevronRight, ChevronLeft, Play, Award, Zap, GitMerge, Terminal, StopCircle, Loader2, Sparkles, Clock, CheckCircle2, Network } from 'lucide-react';
 import { generateSpeech, playBase64Pcm } from '../services/tts';
+import { SvgDiagram } from './Architecture';
 
 const slides = [
   {
@@ -91,6 +92,19 @@ const slides = [
             <div><strong>CLI Orchestration:</strong> Full control via <code className="text-purple-300 text-sm">git-ai queue [pause|reorder|group]</code>.</div>
           </li>
         </ul>
+      </div>
+    )
+  },
+  {
+    id: 4.5,
+    title: "System Architecture",
+    icon: <Network className="w-12 h-12 text-blue-400" />,
+    speechText: "Our architecture is built on a reactive, event-driven model. It bridges the gap between traditional Git providers and advanced A I reasoning. Webhooks from GitHub or GitLab trigger our Node dot j s orchestrator, which uses Gemini 3 point 1 Pro to analyze intent. The state is managed locally and synced in real-time to our React dashboard.",
+    content: (
+      <div className="w-full h-full -mt-4 flex flex-col items-center justify-center">
+        <div className="w-full max-w-4xl bg-zinc-950 border border-zinc-800 rounded-xl p-6">
+          <SvgDiagram />
+        </div>
       </div>
     )
   },

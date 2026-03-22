@@ -6,6 +6,26 @@ The `git-ai benchmark` command is a built-in self-test suite designed to prove t
 ## How It Works
 When you run `git-ai benchmark` in the terminal, the system executes the following steps in real-time:
 
+```mermaid
+sequenceDiagram
+    participant DevA as Developer A
+    participant DevB as Developer B
+    participant GL as GitLab (main)
+    participant AI as Gemini 3.1 Pro
+
+    Note over GL: Initial Commit (main.cpp, calc.py, utils.ts)
+    DevA->>GL: Branch feature-a
+    DevB->>GL: Branch feature-b
+    DevA->>DevA: Add 'c' parameter
+    DevB->>DevB: Add 'd' parameter
+    DevA->>GL: Merge feature-a to main (Success)
+    DevB->>GL: Merge feature-b to main (Conflict!)
+    GL-->>AI: Send conflicting files
+    AI-->>AI: Semantic Intent Analysis
+    AI->>GL: Resolve conflict (incorporate 'c' and 'd')
+    GL->>GL: Merge feature-b to main (Success)
+```
+
 1. **Project Creation**: A new private repository is created on GitLab (e.g., `git-ai-benchmark-1710000000000`).
 2. **Initial Commit**: The `main` branch is initialized with three files:
    - `main.cpp` (C++)

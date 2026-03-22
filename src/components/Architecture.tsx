@@ -1,5 +1,79 @@
-import React from 'react';
+import React, { useEffect, useRef } from 'react';
 import { FileText, GitMerge, Database, Layout, Terminal, Download, Zap, Network, GitBranch } from 'lucide-react';
+import Mermaid from './Mermaid';
+
+export const SvgDiagram = () => (
+  <svg viewBox="0 0 800 400" className="w-full h-auto max-w-3xl mx-auto" xmlns="http://www.w3.org/2000/svg">
+    <defs>
+      <linearGradient id="grad1" x1="0%" y1="0%" x2="100%" y2="100%">
+        <stop offset="0%" style={{ stopColor: '#6366f1', stopOpacity: 1 }} />
+        <stop offset="100%" style={{ stopColor: '#8b5cf6', stopOpacity: 1 }} />
+      </linearGradient>
+      <linearGradient id="grad2" x1="0%" y1="0%" x2="100%" y2="100%">
+        <stop offset="0%" style={{ stopColor: '#10b981', stopOpacity: 1 }} />
+        <stop offset="100%" style={{ stopColor: '#34d399', stopOpacity: 1 }} />
+      </linearGradient>
+      <linearGradient id="grad3" x1="0%" y1="0%" x2="100%" y2="100%">
+        <stop offset="0%" style={{ stopColor: '#f59e0b', stopOpacity: 1 }} />
+        <stop offset="100%" style={{ stopColor: '#fbbf24', stopOpacity: 1 }} />
+      </linearGradient>
+      <linearGradient id="grad4" x1="0%" y1="0%" x2="100%" y2="100%">
+        <stop offset="0%" style={{ stopColor: '#ef4444', stopOpacity: 1 }} />
+        <stop offset="100%" style={{ stopColor: '#f87171', stopOpacity: 1 }} />
+      </linearGradient>
+      <marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+        <path d="M 0 0 L 10 5 L 0 10 z" fill="#a1a1aa" />
+      </marker>
+    </defs>
+    
+    {/* Background */}
+    <rect width="100%" height="100%" fill="#18181b" rx="12" />
+    
+    {/* Nodes */}
+    {/* Git Provider */}
+    <rect x="50" y="160" width="150" height="80" rx="8" fill="url(#grad4)" />
+    <text x="125" y="195" fill="white" fontSize="16" fontWeight="bold" textAnchor="middle" dominantBaseline="middle">Git Provider</text>
+    <text x="125" y="215" fill="white" fontSize="12" textAnchor="middle" dominantBaseline="middle">(GitHub/GitLab)</text>
+
+    {/* Orchestrator */}
+    <rect x="325" y="60" width="150" height="80" rx="8" fill="url(#grad1)" />
+    <text x="400" y="95" fill="white" fontSize="16" fontWeight="bold" textAnchor="middle" dominantBaseline="middle">AI Orchestrator</text>
+    <text x="400" y="115" fill="white" fontSize="12" textAnchor="middle" dominantBaseline="middle">(Node.js/Express)</text>
+
+    {/* Gemini Engine */}
+    <rect x="325" y="260" width="150" height="80" rx="8" fill="url(#grad1)" />
+    <text x="400" y="295" fill="white" fontSize="16" fontWeight="bold" textAnchor="middle" dominantBaseline="middle">Gemini 3.1 Pro</text>
+    <text x="400" y="315" fill="white" fontSize="12" textAnchor="middle" dominantBaseline="middle">Semantic Engine</text>
+
+    {/* Database */}
+    <rect x="600" y="60" width="150" height="80" rx="8" fill="url(#grad3)" />
+    <text x="675" y="95" fill="white" fontSize="16" fontWeight="bold" textAnchor="middle" dominantBaseline="middle">Local Database</text>
+    <text x="675" y="115" fill="white" fontSize="12" textAnchor="middle" dominantBaseline="middle">(State/Logs)</text>
+
+    {/* UI */}
+    <rect x="600" y="260" width="150" height="80" rx="8" fill="url(#grad2)" />
+    <text x="675" y="295" fill="white" fontSize="16" fontWeight="bold" textAnchor="middle" dominantBaseline="middle">Dashboard UI</text>
+    <text x="675" y="315" fill="white" fontSize="12" textAnchor="middle" dominantBaseline="middle">(React/Vite)</text>
+
+    {/* Edges */}
+    <path d="M 200 200 L 325 100" stroke="#a1a1aa" strokeWidth="2" fill="none" markerEnd="url(#arrow)" />
+    <text x="240" y="140" fill="#a1a1aa" fontSize="12" transform="rotate(-35, 240, 140)">Webhooks</text>
+
+    <path d="M 380 140 L 380 260" stroke="#a1a1aa" strokeWidth="2" fill="none" markerEnd="url(#arrow)" />
+    <text x="370" y="200" fill="#a1a1aa" fontSize="12" transform="rotate(-90, 370, 200)">Analyzes Intent</text>
+    
+    <path d="M 420 260 L 420 140" stroke="#a1a1aa" strokeWidth="2" fill="none" markerEnd="url(#arrow)" />
+
+    <path d="M 475 100 L 600 100" stroke="#a1a1aa" strokeWidth="2" fill="none" markerEnd="url(#arrow)" />
+    <text x="537" y="90" fill="#a1a1aa" fontSize="12" textAnchor="middle">State Sync</text>
+
+    <path d="M 675 140 L 675 260" stroke="#a1a1aa" strokeWidth="2" fill="none" markerEnd="url(#arrow)" />
+    <text x="685" y="200" fill="#a1a1aa" fontSize="12">Live Updates</text>
+
+    <path d="M 600 300 L 475 300" stroke="#a1a1aa" strokeWidth="2" fill="none" markerEnd="url(#arrow)" />
+    <text x="537" y="290" fill="#a1a1aa" fontSize="12" textAnchor="middle">Manual Overrides</text>
+  </svg>
+);
 
 export default function Architecture() {
   const handleExportPDF = () => {
@@ -54,7 +128,7 @@ export default function Architecture() {
             <li><strong>Git Providers:</strong> GitHub / GitLab integration via Webhooks.</li>
             <li><strong>AI Orchestrator:</strong> Node.js / Express backend handling analysis and state sync.</li>
             <li><strong>AI Reasoning Engine:</strong> Powered by Gemini 3.1 Pro. Analyzes the intent of changes to resolve logical conflicts.</li>
-            <li><strong>Persistence Layer:</strong> Firebase Firestore acts as the global state coordinator, storing the merge queue, branch health, and semantic reasoning logs.</li>
+            <li><strong>Persistence Layer:</strong> A local database acts as the global state coordinator, storing the merge queue, branch health, and semantic reasoning logs.</li>
             <li><strong>UI:</strong> React / Vite Dashboard for Live Updates.</li>
           </ul>
         </div>
@@ -177,12 +251,22 @@ export default function Architecture() {
         </ul>
       </div>
 
-      {/* Mermaid Diagram */}
+      {/* Architecture Diagrams */}
       <div className="bg-zinc-900 border border-zinc-800 rounded-xl p-8 shadow-xl print:hidden">
-        <h2 className="text-2xl font-bold text-white border-b border-zinc-800 pb-4 mb-6">7. Architecture Diagram (Mermaid)</h2>
-        <div className="bg-zinc-950 border border-zinc-800 rounded-lg p-6 overflow-x-auto">
-          <pre className="text-emerald-400 font-mono text-sm leading-relaxed">
-{`graph TD
+        <h2 className="text-2xl font-bold text-white border-b border-zinc-800 pb-4 mb-6">7. Architecture Diagrams</h2>
+        
+        <div className="space-y-12">
+          <div>
+            <h3 className="text-xl font-semibold text-zinc-200 mb-4">SVG Architecture Flow</h3>
+            <div className="bg-zinc-950 border border-zinc-800 rounded-lg p-6">
+              <SvgDiagram />
+            </div>
+          </div>
+
+          <div>
+            <h3 className="text-xl font-semibold text-zinc-200 mb-4">Mermaid Component Diagram</h3>
+            <div className="bg-zinc-950 border border-zinc-800 rounded-lg p-6 overflow-x-auto">
+              <Mermaid chart={`graph TD
     subgraph Git Providers
         A[GitHub / GitLab]
     end
@@ -194,7 +278,7 @@ export default function Architecture() {
     end
 
     subgraph Persistence Layer
-        D[(Firebase Firestore)]
+        D[(Local Database)]
     end
 
     subgraph UI
@@ -214,8 +298,9 @@ export default function Architecture() {
     class A provider;
     class B,C orchestrator;
     class D db;
-    class E ui;`}
-          </pre>
+    class E ui;`} />
+            </div>
+          </div>
         </div>
       </div>
     </div>

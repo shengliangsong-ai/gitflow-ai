@@ -1,10 +1,28 @@
 import React from 'react';
 import Markdown from 'react-markdown';
+import Mermaid from './Mermaid';
 
 const markdownContent = `
 ## 🧪 Testing Instructions
 
 Welcome to the AI Merge Queue (GitFlow AI v2) demo! Our application is designed to be fully verifiable. You can test the core functionality directly through the web interface.
+
+\`\`\`mermaid
+graph TD
+    A[Start: Open App] --> B[Explore Dashboard & UI]
+    B --> C[Play AI Pitch]
+    C --> D[Run Live GitHub Sync]
+    D --> E[Start Phase A: Devs push code]
+    E --> F[Start Phase B: Merge & Conflict]
+    F --> G{AI Merge Queue}
+    G -->|Semantic Resolution| H[Merge Success]
+    H --> I[Test Built-in Benchmark]
+    I --> J[Test Local CLI]
+    
+    classDef default fill:#18181b,stroke:#6366f1,stroke-width:2px,color:#fff;
+    classDef ai fill:#18181b,stroke:#f59e0b,stroke-width:2px,color:#fff;
+    class G ai;
+\`\`\`
 
 ### Prerequisites
 *   A modern web browser (Chrome, Firefox, Safari, Edge).
@@ -35,10 +53,17 @@ This is the core demonstration of our technology. We will simulate a real-world 
 6.  **Watch the AI Resolve:** Pay close attention to the terminal output. You will see the system detect the conflict, pause, and hand the conflict over to the AI Merge Queue. The AI will analyze the AST, resolve the conflict semantically, and complete the merge automatically.
 7.  **Verify the Graph:** Look at the Live Git Graph to confirm that the branches have been successfully merged into \`main\`.
 
-### Step 4: Test the Local CLI (Optional/Informational)
+### Step 4: Test the Built-in Benchmark
+1.  Navigate to the **Benchmark** tab.
+2.  This tab provides documentation on how the \`git-ai benchmark\` command works.
+3.  To run the benchmark, navigate to the **CLI Terminal** tab.
+4.  Type \`git-ai benchmark\` and press Enter.
+5.  Watch the live Server-Sent Events (SSE) stream as the system orchestrates a real GitLab repository, simulates developer activity, generates a conflict, and resolves it using Gemini 3.1 Pro.
+
+### Step 5: Test the Local CLI (Optional/Informational)
 1.  Navigate to the **Local CLI** tab.
 2.  This tab provides documentation and interactive examples of how a developer would use the \`git-ai\` tool on their local machine.
-3.  Click through the simulated commands (e.g., \`git-ai commit\`, \`git-ai push\`) to see how the local CLI intercepts standard Git commands to provide AI feedback before code is pushed to the queue.
+3.  Click through the simulated commands (e.g., \`git-ai commit\`, \`git-ai push\`, \`git-ai benchmark\`) to see how the local CLI intercepts standard Git commands to provide AI feedback before code is pushed to the queue.
 
 ### Troubleshooting
 *   **Sync Fails:** If the "Sync GitHub" process fails or hangs, click the **"Reset Demo"** button in the CLI Terminal tab and try again.
@@ -49,7 +74,20 @@ export default function TestingInstructions() {
   return (
     <div className="bg-zinc-900 rounded-2xl border border-zinc-800 p-8 shadow-xl">
       <div className="prose prose-invert max-w-none prose-indigo">
-        <Markdown>{markdownContent}</Markdown>
+        <Markdown
+          components={{
+            code(props: any) {
+              const {children, className, node, ...rest} = props;
+              const match = /language-(\w+)/.exec(className || '');
+              if (match && match[1] === 'mermaid') {
+                return <Mermaid chart={String(children).replace(/\n$/, '')} />;
+              }
+              return <code {...rest} className={className}>{children}</code>;
+            }
+          }}
+        >
+          {markdownContent}
+        </Markdown>
       </div>
     </div>
   );

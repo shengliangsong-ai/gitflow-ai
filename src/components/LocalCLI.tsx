@@ -169,6 +169,22 @@ export default function LocalCLI() {
             <div className="text-amber-400 mt-1">Queue Status: 2 PRs waiting, 1 processing.</div>
           </div>
         </div>
+
+        <div className="bg-zinc-900 border border-zinc-800 rounded-xl p-6 shadow-xl">
+          <h2 className="text-lg font-semibold text-white mb-4 flex items-center gap-2">
+            <Terminal className="w-5 h-5 text-indigo-400" />
+            Built-in Benchmark
+          </h2>
+          <p className="text-zinc-400 text-sm mb-4">
+            Run <code className="text-indigo-300">git-ai benchmark</code> to trigger an automated self-test that simulates real-world conflicts and proves AI accuracy.
+          </p>
+          <div className="bg-zinc-950 border border-zinc-800 rounded-lg p-4 font-mono text-sm">
+            <div className="text-zinc-500">$ git-ai benchmark</div>
+            <div className="text-fuchsia-400 mt-2">[AI GitFlow] Starting benchmark suite...</div>
+            <div className="text-cyan-400">🚀 Creating live repository and simulating developer activity...</div>
+            <div className="text-emerald-400 mt-1">✅ Conflict detected and resolved semantically by Gemini 3.1 Pro.</div>
+          </div>
+        </div>
       </div>
     </div>
   );
