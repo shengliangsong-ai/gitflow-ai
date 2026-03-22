@@ -92,7 +92,14 @@ class ContextManager {
     this.db = null;
 
     try {
-      const Database = require('better-sqlite3');
+      let Database;
+      try {
+        Database = require('better-sqlite3');
+      } catch (e) {
+        // Try global installation if local fails
+        const globalNodeModules = require('child_process').execSync('npm root -g').toString().trim();
+        Database = require(path.join(globalNodeModules, 'better-sqlite3'));
+      }
       this.db = new Database(this.dbPath);
       this.db.exec(`
         CREATE TABLE IF NOT EXISTS history (
