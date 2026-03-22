@@ -20,7 +20,7 @@
 GitFlow AI acts as an intelligent "traffic controller" for your team's code.
 - **Semantic Intent Analysis:** Gemini reads PRs to understand the *why*, not just the *what*, assigning risk levels automatically.
 - **Automated Conflict Resolution:** When Git fails, Gemini steps in to intelligently combine divergent code paths.
-- **Smart Queueing:** The AI determines the safest order to merge PRs, testing them sequentially.
+- **Confidence Scoring (95/5 Rule):** The AI performs a secondary "cherry-pick view" to score its own resolution. 95% of conflicts are auto-resolved. For the 5% that score low, the queue auto-pauses for human intervention.
 
 ---
 
@@ -36,9 +36,10 @@ We use the Git repository itself as the source of truth.
 ## Slide 5: Enterprise-Grade Audit Trail
 **The `gitflow-audit` Repository**
 To prevent the main repository from being bloated by high-frequency updates, we introduced a dedicated audit repository.
-- **Immutable Logs:** Every AI decision, conflict resolution, and queue modification is committed as a JSON log entry to `gitflow-audit`.
+- **Conflict Artifacts:** When a conflict occurs, File A, File B, the AI model parameters, and the final merged file are all saved to the audit repo for perfect traceability.
+- **Immutable Logs:** Every AI decision, conflict resolution, and queue modification is committed as a JSON log entry.
 - **Context Sync:** The developer's conversational history with the AI is synced to `gitflow-audit/<username>/context.json`.
-- **High-Speed Local Cache:** A local SQLite database acts purely as a fast cache, ensuring the CLI remains lightning-fast while maintaining the remote repo as the single source of truth.
+- **High-Speed Local Cache:** A local SQLite database acts purely as a fast cache, ensuring the CLI remains lightning-fast.
 
 ---
 

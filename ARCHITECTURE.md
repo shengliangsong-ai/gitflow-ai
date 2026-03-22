@@ -68,7 +68,8 @@ Instead of a centralized PostgreSQL or MongoDB database, GitFlow AI uses **GitOp
 
 ### 3. The Audit Repository (`gitflow-audit`)
 To prevent the main repository from being bloated by high-frequency AI logs, all operational data is stored in a separate `gitflow-audit` repository.
-- **Context Storage:** Stores the conversational history between the developer and the AI (`context.json`).
+- **Context & Parameters:** Stores the conversational history, AI model parameters, prompts, and raw responses (`context.json`).
+- **Conflict Artifacts:** When a conflict occurs between File A and File B, both original files and the final AI-generated merged file are checked into the audit repo for traceability.
 - **Audit Trail:** Logs every AI decision, conflict resolution, and queue modification.
 - **Local Cache:** The CLI maintains a local SQLite database (`~/.git-ai-context.db`) as a high-speed cache, which asynchronously syncs to the remote `gitflow-audit` repo.
 
@@ -76,6 +77,7 @@ To prevent the main repository from being bloated by high-frequency AI logs, all
 The intelligence layer. It performs:
 - **Semantic Intent Analysis:** Understanding *why* code was written to determine merge risk.
 - **Conflict Resolution:** Intelligently combining divergent code paths when Git's standard text-based merge fails.
+- **Confidence Scoring (95/5 Rule):** After generating a merged file, the AI performs a secondary "cherry-pick view" to evaluate the resolution and assigns a Confidence Score. If the score is low (representing the 5% of conflicts the AI cannot confidently resolve), the CLI automatically pauses the merge queue or reverts the cherry-pick, alerting a human developer to intervene.
 
 ### 5. Web Dashboard
 A React-based frontend that provides a visual representation of the GitOps state. It reads the `queue.json` from the `gitflow-ai-state` branch and the logs from the `gitflow-audit` repo to display real-time metrics to engineering managers.

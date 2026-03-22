@@ -40,8 +40,15 @@ The CLI manages the queue state directly in the user's repository without requir
 ### 3.4 Audit & Context Management (`gitflow-audit` repo)
 To solve the limitations of high-frequency updates and provide a robust historical audit trail, all AI operations and conversation contexts are stored in a dedicated, separate repository named `gitflow-audit`.
 - **Audit Trail:** Every AI action (queue changes, conflict resolutions, code reviews) is committed as a JSON log entry to the `gitflow-audit` repository. This provides an enterprise-grade, immutable audit log.
-- **Context Storage:** The developer's AI conversation history (previously requiring a local SQLite database) is now synced to `gitflow-audit/<username>/context.json`. 
+- **Context & Parameters:** The AI model's parameters, prompts, and raw responses are saved alongside the developer's conversation history (`context.json`).
+- **Conflict Artifacts:** When a merge conflict occurs between File A and File B, both original files, the AI's parameters, and the final AI-generated merged file are checked into the audit repo. This allows for perfect traceability of how a conflict was resolved.
 - **Local Cache:** The local SQLite database (`~/.git-ai-context.db`) is no longer a strict requirement. It now acts purely as a high-speed local cache for the `gitflow-audit` repository, ensuring fast CLI responses while maintaining the remote repo as the single source of truth.
+
+### 3.5 Confidence Scoring & Human Fallback (95/5 Rule)
+GitFlow AI aims to automatically resolve 95% of merge conflicts. For the remaining 5% of highly complex or ambiguous conflicts, the system relies on a Human-in-the-Loop fallback mechanism.
+- **Secondary Review & Scoring:** After generating a merged file, the AI performs a secondary "cherry-pick view" to evaluate the logical integrity of the resolution, assigning it a Confidence Score.
+- **Auto-Pause / Revert:** If the Confidence Score falls below a defined threshold (e.g., < 0.85), the CLI will automatically **pause the AI merge queue** (or revert the cherry-pick and move to the next item in the queue).
+- **Human Intervention:** The system alerts the engineering team that human intervention is required to manually resolve the specific conflict before the queue can resume.
 
 ## 4. Security & Privacy
 - **Local Execution:** The application can be run entirely locally on a private company network.
