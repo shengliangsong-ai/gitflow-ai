@@ -592,28 +592,82 @@ async function runCreate(args) {
 
 async function runQueue(args) {
   const parts = args.trim().split(' ').filter(Boolean);
-  const subCmd = parts[0] || 'status';
+  const subCmd = parts[0] || 'list';
 
   if (subCmd === 'status' || subCmd === 'list') {
     console.log(`\x1b[36m📊 Fetching GitFlow AI Queue status...\x1b[0m`);
     await new Promise(r => setTimeout(r, 1000));
-    console.log(`\x1b[33mQueue Status: 2 PRs waiting, 1 processing.\x1b[0m`);
+    console.log(`\x1b[33mQueue ID: q-1042 (Target: main) - Status: Active\x1b[0m`);
     console.log(`\n\x1b[35m[Processing]\x1b[0m PR #12: Update React to v18`);
     console.log(`\x1b[33m[Waiting]\x1b[0m    PR #14: Add new payment gateway`);
     console.log(`\x1b[33m[Waiting]\x1b[0m    PR #13: Fix typo in README.md`);
-  } else if (subCmd === 'add') {
-    const branch = parts[1];
-    if (!branch) {
-      console.log(`\x1b[31m❌ Error: Missing branch name.\x1b[0m`);
-      console.log(`Usage: git-ai queue add <branch_name>`);
+  } else if (subCmd === 'create') {
+    const destBranch = parts[1];
+    const sourceBranches = parts.slice(2);
+    if (!destBranch || sourceBranches.length === 0) {
+      console.log(`\x1b[31m❌ Error: Missing destination or source branches.\x1b[0m`);
+      console.log(`Usage: git-ai queue create <dest_branch> <source_branch(es)>`);
       process.exit(1);
     }
-    console.log(`\x1b[36m🚀 Registering branch '${branch}' with GitFlow AI Queue...\x1b[0m`);
+    console.log(`\x1b[36m🚀 Creating new AI Queue for target '${destBranch}' with ${sourceBranches.length} branches...\x1b[0m`);
     await new Promise(r => setTimeout(r, 1000));
-    console.log(`\x1b[32m✅ Branch '${branch}' successfully added to the queue.\x1b[0m`);
+    const queueId = `q-${Math.floor(Math.random() * 10000)}`;
+    console.log(`\x1b[32m✅ Queue '${queueId}' created successfully.\x1b[0m`);
+  } else if (subCmd === 'delete') {
+    const queueId = parts[1];
+    if (!queueId) {
+      console.log(`\x1b[31m❌ Error: Missing queue_id.\x1b[0m`);
+      console.log(`Usage: git-ai queue delete <queue_id>`);
+      process.exit(1);
+    }
+    console.log(`\x1b[36m🗑️ Deleting queue '${queueId}'...\x1b[0m`);
+    await new Promise(r => setTimeout(r, 500));
+    console.log(`\x1b[32m✅ Queue '${queueId}' deleted.\x1b[0m`);
+  } else if (subCmd === 'add') {
+    const queueId = parts[1];
+    const sourceBranches = parts.slice(2);
+    if (!queueId || sourceBranches.length === 0) {
+      console.log(`\x1b[31m❌ Error: Missing queue_id or source branches.\x1b[0m`);
+      console.log(`Usage: git-ai queue add <queue_id> <source_branch(es)>`);
+      process.exit(1);
+    }
+    console.log(`\x1b[36m➕ Adding branches [${sourceBranches.join(', ')}] to queue '${queueId}'...\x1b[0m`);
+    await new Promise(r => setTimeout(r, 500));
+    console.log(`\x1b[32m✅ Branches added to queue '${queueId}'.\x1b[0m`);
+  } else if (subCmd === 'remove') {
+    const queueId = parts[1];
+    const sourceBranches = parts.slice(2);
+    if (!queueId || sourceBranches.length === 0) {
+      console.log(`\x1b[31m❌ Error: Missing queue_id or source branches.\x1b[0m`);
+      console.log(`Usage: git-ai queue remove <queue_id> <source_branch(es)>`);
+      process.exit(1);
+    }
+    console.log(`\x1b[36m➖ Removing branches [${sourceBranches.join(', ')}] from queue '${queueId}'...\x1b[0m`);
+    await new Promise(r => setTimeout(r, 500));
+    console.log(`\x1b[32m✅ Branches removed from queue '${queueId}'.\x1b[0m`);
+  } else if (subCmd === 'pause') {
+    const queueId = parts[1];
+    if (!queueId) {
+      console.log(`\x1b[31m❌ Error: Missing queue_id.\x1b[0m`);
+      console.log(`Usage: git-ai queue pause <queue_id>`);
+      process.exit(1);
+    }
+    console.log(`\x1b[36m⏸️ Pausing queue '${queueId}'...\x1b[0m`);
+    await new Promise(r => setTimeout(r, 500));
+    console.log(`\x1b[32m✅ Queue '${queueId}' paused.\x1b[0m`);
+  } else if (subCmd === 'resume') {
+    const queueId = parts[1];
+    if (!queueId) {
+      console.log(`\x1b[31m❌ Error: Missing queue_id.\x1b[0m`);
+      console.log(`Usage: git-ai queue resume <queue_id>`);
+      process.exit(1);
+    }
+    console.log(`\x1b[36m▶️ Resuming queue '${queueId}'...\x1b[0m`);
+    await new Promise(r => setTimeout(r, 500));
+    console.log(`\x1b[32m✅ Queue '${queueId}' resumed.\x1b[0m`);
   } else {
     console.log(`\x1b[31m❌ Unknown queue command: ${subCmd}\x1b[0m`);
-    console.log(`Usage: git-ai queue [status|list|add]`);
+    console.log(`Usage: git-ai queue [create|list|delete|add|remove|pause|resume]`);
     process.exit(1);
   }
 }

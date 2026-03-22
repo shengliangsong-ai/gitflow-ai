@@ -233,16 +233,18 @@ export default function LocalCLI() {
         <div className="bg-zinc-900 border border-zinc-800 rounded-xl p-6 shadow-xl">
           <h2 className="text-lg font-semibold text-white mb-4 flex items-center gap-2">
             <Command className="w-5 h-5 text-indigo-400" />
-            Queue Status
+            Queue Management
           </h2>
           <p className="text-zinc-400 text-sm mb-4">
-            Check the global merge queue status directly from your terminal without opening the browser.
+            Manage the AI merge queue directly from your terminal. Create queues, add branches, and monitor status.
           </p>
           <div className="bg-zinc-950 border border-zinc-800 rounded-lg p-4 font-mono text-sm">
-            <div className="text-zinc-500">$ git-ai status</div>
-            <div className="text-fuchsia-400 mt-2">[AI GitFlow] Intercepting git status...</div>
-            <div className="text-cyan-400">📊 Fetching queue status from AI GitFlow Cloud...</div>
-            <div className="text-amber-400 mt-1">Queue Status: 2 PRs waiting, 1 processing.</div>
+            <div className="text-zinc-500">$ git-ai queue create main feature-A feature-B</div>
+            <div className="text-cyan-400 mt-2">🚀 Creating new AI Queue for target 'main' with 2 branches...</div>
+            <div className="text-emerald-400 mt-1">✅ Queue 'q-1042' created successfully.</div>
+            <div className="text-zinc-500 mt-4">$ git-ai queue list</div>
+            <div className="text-cyan-400 mt-2">📊 Fetching GitFlow AI Queues...</div>
+            <div className="text-amber-400 mt-1">Queue ID: q-1042 (Target: main) - Status: Active</div>
           </div>
         </div>
 
