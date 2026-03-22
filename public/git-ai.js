@@ -72,11 +72,14 @@ if (!command || command === 'help' || command === '--version' || command === '-v
   console.log('  push      Push code and automatically register with AI Merge Queue');
   console.log('  rebase    Run rebase with AI conflict resolution monitoring');
   console.log('  status    Check the status of the global merge queue and verify tokens');
+  console.log('  benchmark Run a self-test to measure API latency and verify connections');
   console.log('  *         Any other command falls back to standard git');
   process.exit(0);
 }
 
-console.log(`\x1b[35m[AI GitFlow]\x1b[0m Intercepting git ${command}...`);
+if (command !== 'benchmark') {
+  console.log(`\x1b[35m[AI GitFlow]\x1b[0m Intercepting git ${command}...`);
+}
 
 function makeGeminiRequest(prompt) {
   return new Promise((resolve, reject) => {
@@ -231,6 +234,89 @@ async function checkStatus() {
   req.end();
 }
 
+async function runBenchmark() {
+  console.log(`\x1b[36m🚀 Starting AI GitFlow Benchmark Self-Test...\x1b[0m\n`);
+
+  if (!GEMINI_API_KEY) {
+    console.error('\x1b[31m❌ GEMINI_API_KEY is not set. Cannot benchmark AI latency.\x1b[0m');
+  } else {
+    console.log(`\x1b[33mTesting Gemini API Latency...\x1b[0m`);
+    const prompt = `Respond with exactly this JSON and nothing else: {"review": "Benchmark successful.", "blockCommit": false}`;
+    
+    const startTime = Date.now();
+    try {
+      const result = await makeGeminiRequest(prompt);
+      const endTime = Date.now();
+      const latency = endTime - startTime;
+      console.log(`\x1b[32m✅ Gemini API responded in ${latency}ms\x1b[0m`);
+      console.log(`   Response: ${result.review}`);
+    } catch (e) {
+      console.error(`\x1b[31m❌ Gemini API Test Failed: ${e.message}\x1b[0m`);
+    }
+  }
+
+  console.log();
+
+  if (!GIT_TOKEN) {
+    console.error('\x1b[31m❌ GIT_TOKEN is not set. Cannot benchmark Git provider latency.\x1b[0m');
+  } else {
+    console.log(`\x1b[33mTesting Git Provider Latency (GitHub/GitLab)...\x1b[0m`);
+    const startTime = Date.now();
+    
+    const options = {
+      hostname: 'api.github.com',
+      path: '/user',
+      method: 'GET',
+      headers: {
+        'Authorization': `Bearer ${GIT_TOKEN}`,
+        'User-Agent': 'AI-GitFlow-CLI'
+      }
+    };
+    
+    const req = https.request(options, (res) => {
+      let data = '';
+      res.on('data', (chunk) => data += chunk);
+      res.on('end', () => {
+        const endTime = Date.now();
+        const latency = endTime - startTime;
+        if (res.statusCode === 200) {
+          const user = JSON.parse(data);
+          console.log(`\x1b[32m✅ GitHub API responded in ${latency}ms (User: ${user.login})\x1b[0m`);
+        } else {
+           const glStartTime = Date.now();
+           const glOptions = {
+             hostname: 'gitlab.com',
+             path: '/api/v4/user',
+             method: 'GET',
+             headers: {
+               'Authorization': `Bearer ${GIT_TOKEN}`,
+               'User-Agent': 'AI-GitFlow-CLI'
+             }
+           };
+           const glReq = https.request(glOptions, (glRes) => {
+             let glData = '';
+             glRes.on('data', (chunk) => glData += chunk);
+             glRes.on('end', () => {
+               const glEndTime = Date.now();
+               const glLatency = glEndTime - glStartTime;
+               if (glRes.statusCode === 200) {
+                 const user = JSON.parse(glData);
+                 console.log(`\x1b[32m✅ GitLab API responded in ${glLatency}ms (User: ${user.username})\x1b[0m`);
+               } else {
+                 console.log(`\x1b[31m❌ Failed to authenticate with GitHub or GitLab.\x1b[0m`);
+               }
+             });
+           });
+           glReq.on('error', (e) => console.log(`\x1b[31m❌ GitLab Network error: ${e.message}\x1b[0m`));
+           glReq.end();
+        }
+      });
+    });
+    req.on('error', (e) => console.log(`\x1b[31m❌ GitHub Network error: ${e.message}\x1b[0m`));
+    req.end();
+  }
+}
+
 switch (command) {
   case 'commit':
     analyzeCommit();
@@ -245,6 +331,9 @@ switch (command) {
     break;
   case 'status':
     checkStatus();
+    break;
+  case 'benchmark':
+    runBenchmark();
     break;
   default:
     runGit(`${command} ${gitArgs}`);
