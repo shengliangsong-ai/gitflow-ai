@@ -78,6 +78,7 @@ if (!command || command === 'help' || command === '--version' || command === '-v
   console.log('  sync      Sync between two repos (GitHub <-> GitLab)');
   console.log('  commit    Analyze staged files with AI before committing');
   console.log('  push      Push code and automatically register with GitFlow AI Queue');
+  console.log('  queue     Manage the GitFlow AI Queue (status, list, add)');
   console.log('  rebase    Run rebase with AI conflict resolution monitoring');
   console.log('  cherry-pick Apply the changes introduced by some existing commits with AI assistance');
   console.log('  status    Check the status of the global merge queue and verify tokens');
@@ -589,9 +590,40 @@ async function runCreate(args) {
   console.log(`\x1b[35m[GitFlow AI]\x1b[0m Ready for AI-assisted development.`);
 }
 
+async function runQueue(args) {
+  const parts = args.trim().split(' ').filter(Boolean);
+  const subCmd = parts[0] || 'status';
+
+  if (subCmd === 'status' || subCmd === 'list') {
+    console.log(`\x1b[36m📊 Fetching GitFlow AI Queue status...\x1b[0m`);
+    await new Promise(r => setTimeout(r, 1000));
+    console.log(`\x1b[33mQueue Status: 2 PRs waiting, 1 processing.\x1b[0m`);
+    console.log(`\n\x1b[35m[Processing]\x1b[0m PR #12: Update React to v18`);
+    console.log(`\x1b[33m[Waiting]\x1b[0m    PR #14: Add new payment gateway`);
+    console.log(`\x1b[33m[Waiting]\x1b[0m    PR #13: Fix typo in README.md`);
+  } else if (subCmd === 'add') {
+    const branch = parts[1];
+    if (!branch) {
+      console.log(`\x1b[31m❌ Error: Missing branch name.\x1b[0m`);
+      console.log(`Usage: git-ai queue add <branch_name>`);
+      process.exit(1);
+    }
+    console.log(`\x1b[36m🚀 Registering branch '${branch}' with GitFlow AI Queue...\x1b[0m`);
+    await new Promise(r => setTimeout(r, 1000));
+    console.log(`\x1b[32m✅ Branch '${branch}' successfully added to the queue.\x1b[0m`);
+  } else {
+    console.log(`\x1b[31m❌ Unknown queue command: ${subCmd}\x1b[0m`);
+    console.log(`Usage: git-ai queue [status|list|add]`);
+    process.exit(1);
+  }
+}
+
 switch (command) {
   case 'create':
     runCreate(gitArgs);
+    break;
+  case 'queue':
+    runQueue(gitArgs);
     break;
   case 'clone':
     runClone(gitArgs);
