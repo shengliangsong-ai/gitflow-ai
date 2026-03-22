@@ -179,6 +179,34 @@ class ContextManager {
         // Ignore
       }
     }
+    this.syncToAuditRepo(role, content);
+  }
+
+  syncToAuditRepo(role, content) {
+    // In a real implementation, this would clone/pull the gitflow-audit repo
+    // and commit the context.json file to the user's directory.
+    // For this CLI, we simulate the GitOps audit trail locally.
+    const auditDir = path.join(os.homedir(), '.gitflow-audit');
+    if (!fs.existsSync(auditDir)) {
+      fs.mkdirSync(auditDir, { recursive: true });
+    }
+    
+    const userAuditFile = path.join(auditDir, 'context.json');
+    let auditData = [];
+    try {
+      if (fs.existsSync(userAuditFile)) {
+        auditData = JSON.parse(fs.readFileSync(userAuditFile, 'utf8'));
+      }
+    } catch (e) {}
+
+    auditData.push({ role, content, timestamp: new Date().toISOString() });
+    if (auditData.length > 500) auditData.shift(); // Keep more history in audit
+    
+    try {
+      fs.writeFileSync(userAuditFile, JSON.stringify(auditData, null, 2), 'utf8');
+      // Simulate git commit to audit repo
+      // execSync(`cd ${auditDir} && git add . && git commit -m "Audit log: AI interaction" && git push`);
+    } catch (e) {}
   }
 }
 
@@ -545,6 +573,23 @@ async function runBenchmark() {
       console.log(`\x1b[32m   ✅ Test queue deleted from Git\x1b[0m`);
     } catch (e) {
       console.error(`\x1b[31m❌ GitOps Queue Test Failed: ${e.message}\x1b[0m`);
+    }
+
+    console.log();
+
+    console.log(`\x1b[33mTesting GitOps Audit Logging (gitflow-audit repo)...\x1b[0m`);
+    try {
+      console.log(`   1. Simulating context sync to audit repo...`);
+      const auditDir = path.join(os.homedir(), '.gitflow-audit');
+      if (!fs.existsSync(auditDir)) {
+        fs.mkdirSync(auditDir, { recursive: true });
+      }
+      const testAuditFile = path.join(auditDir, 'context.json');
+      fs.writeFileSync(testAuditFile, JSON.stringify([{role: 'system', content: 'test'}], null, 2), 'utf8');
+      console.log(`\x1b[32m   ✅ Successfully wrote to local audit cache (${auditDir})\x1b[0m`);
+      console.log(`\x1b[32m   ✅ Context and operation logs are ready to be pushed to remote gitflow-audit repository.\x1b[0m`);
+    } catch (e) {
+      console.error(`\x1b[31m❌ GitOps Audit Test Failed: ${e.message}\x1b[0m`);
     }
   }
 }

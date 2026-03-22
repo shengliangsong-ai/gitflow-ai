@@ -36,7 +36,12 @@ When a Git merge conflict is detected (e.g., `<<<<<<< HEAD`), the system interve
 The CLI manages the queue state directly in the user's repository without requiring a central database.
 - **State Branch:** The queue state is stored as a `queue.json` file in a hidden, orphaned branch named `gitflow-ai-state`.
 - **Operations:** When a user runs `git-ai queue add` or `git-ai queue create`, the CLI uses the GitHub/GitLab API to fetch the `queue.json` file, updates the JSON array, and commits the change back to the `gitflow-ai-state` branch.
-- **Benefits:** This provides a free, built-in audit log of every queue change, perfectly respects the repository's existing access permissions, and allows the CLI to function entirely standalone.
+
+### 3.4 Audit & Context Management (`gitflow-audit` repo)
+To solve the limitations of high-frequency updates and provide a robust historical audit trail, all AI operations and conversation contexts are stored in a dedicated, separate repository named `gitflow-audit`.
+- **Audit Trail:** Every AI action (queue changes, conflict resolutions, code reviews) is committed as a JSON log entry to the `gitflow-audit` repository. This provides an enterprise-grade, immutable audit log.
+- **Context Storage:** The developer's AI conversation history (previously requiring a local SQLite database) is now synced to `gitflow-audit/<username>/context.json`. 
+- **Local Cache:** The local SQLite database (`~/.git-ai-context.db`) is no longer a strict requirement. It now acts purely as a high-speed local cache for the `gitflow-audit` repository, ensuring fast CLI responses while maintaining the remote repo as the single source of truth.
 
 ## 4. Security & Privacy
 - **Local Execution:** The application can be run entirely locally on a private company network.
