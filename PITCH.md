@@ -16,11 +16,11 @@
 ---
 
 ## Slide 3: The Solution
-**AI-Powered Orchestration**
-GitFlow AI acts as an intelligent "traffic controller" for your team's code.
-- **Semantic Intent Analysis:** Gemini reads PRs to understand the *why*, not just the *what*, assigning risk levels automatically.
-- **Automated Conflict Resolution:** When Git fails, Gemini steps in to intelligently combine divergent code paths.
-- **Confidence Scoring (95/5 Rule):** The AI performs a secondary "cherry-pick view" to score its own resolution. 95% of conflicts are auto-resolved. For the 5% that score low, the queue auto-pauses for human intervention.
+**Dual-Model AI Orchestration**
+GitFlow AI acts as an intelligent "traffic controller" using two distinct AI phases:
+- **Phase 1: Auto-Resolution:** The first model reads PRs, understands the *why*, and intelligently combines divergent code paths during a cherry-pick.
+- **Phase 2: Audit & Verify:** A second, independent model audits the final merged file, verifies the conflict was correctly resolved, and generates a Confidence Score.
+- **The 95/5 Rule:** 95% of conflicts are auto-resolved. For the 5% that score low, the queue auto-pauses for human intervention.
 
 ---
 

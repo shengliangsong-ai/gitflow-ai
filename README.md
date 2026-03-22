@@ -99,11 +99,11 @@ npm run start
 
 Let's click 'Simulate Team Activity'. Mock pull requests flood into our **AI Merge Queue**. Instantly, the AI performs a 'Semantic Intent Analysis.' It reads the code, summarizes the developer's actual goal, and assigns a Risk Level. If the risk is low, the AI automatically merges it. It completely removes the manual bottleneck for routine updates."
 
-**[1:10 - 1:50] The Demo: Conflict Resolution**
+**[1:10 - 1:50] The Demo: Conflict Resolution & Audit**
 *(Visual: Click "Simulate Conflict")*
 "But what happens during a code collision? Let's click 'Simulate Conflict'. Two developers just modified the exact same lines of code. 
 
-Normally, this breaks the pipeline. But our AI Agent catches the conflict, analyzes the context of both changes, intelligently resolves the collision, and completes the merge automatically. You can see the exact history updating live in our Git Tree View."
+Normally, this breaks the pipeline. But we use a **Dual-Model Architecture**. The first AI model catches the conflict and intelligently resolves the collision during the cherry-pick. Then, a second, independent AI model acts as an auditor. It verifies the final merged file, ensures the logic is sound, and generates a confidence score. All of this—the original files, the AI parameters, and the score—is saved to a dedicated `gitflow-audit` repository for perfect enterprise traceability. If the score is low, it pauses for a human. Otherwise, it merges automatically!"
 
 **[1:50 - 2:20] Deployment & Conclusion**
 *(Visual: Show the README or Settings page mentioning API keys)*

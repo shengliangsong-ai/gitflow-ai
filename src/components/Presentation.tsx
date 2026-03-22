@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Presentation as PresentationIcon, ChevronRight, ChevronLeft, Play, Award, Zap, GitMerge, Terminal, StopCircle, Loader2, Sparkles, Clock, CheckCircle2, Network } from 'lucide-react';
+import { Presentation as PresentationIcon, ChevronRight, ChevronLeft, Play, Award, Zap, GitMerge, Terminal, StopCircle, Loader2, Sparkles, Clock, CheckCircle2, Network, Database } from 'lucide-react';
 import { generateSpeech, playBase64Pcm } from '../services/tts';
 import { SvgDiagram } from './Architecture';
 
@@ -72,24 +72,24 @@ const slides = [
   },
   {
     id: 4,
-    title: "Semantic Orchestration Layer",
+    title: "Dual-Model Semantic Orchestration",
     icon: <Sparkles className="w-12 h-12 text-purple-400" />,
-    speechText: "Powered by Gemini 3 point 1 Pro, our A I understands what your code actually does. It calculates risk levels, detects logical conflicts, and supports advanced merge topologies. It's not just a queue; it's an intelligent traffic controller for your codebase.",
+    speechText: "We use a powerful Dual-Model architecture. The first model acts as the developer, intelligently auto-resolving conflicts during the cherry-pick phase. The second model acts as the auditor. It independently verifies the final commit, ensures the conflict was correctly resolved, and generates an audit score. All artifacts are then saved to the gitflow audit repository. If the score is high, we merge. If it's low, we pause for human review.",
     content: (
       <div className="space-y-6 text-xl text-zinc-300">
-        <p>Moving beyond basic CI/CD with <strong>Semantic Intent Analysis</strong> powered by Gemini 3.1 Pro.</p>
+        <p>Moving beyond basic CI/CD with a <strong>Dual-Model Architecture</strong>.</p>
         <ul className="space-y-6">
           <li className="flex items-start gap-4">
-            <div className="bg-purple-500/20 p-2 rounded-lg mt-1"><Sparkles className="w-5 h-5 text-purple-400" /></div>
-            <div><strong>Intent Analysis:</strong> AI understands the <em>purpose</em> of changes, not just the syntax.</div>
-          </li>
-          <li className="flex items-start gap-4">
-            <div className="bg-purple-500/20 p-2 rounded-lg mt-1"><GitMerge className="w-5 h-5 text-purple-400" /></div>
-            <div><strong>Advanced Topologies:</strong> Supports N-Way Star Merge and Cascading Rebase.</div>
-          </li>
-          <li className="flex items-start gap-4">
             <div className="bg-purple-500/20 p-2 rounded-lg mt-1"><Terminal className="w-5 h-5 text-purple-400" /></div>
-            <div><strong>CLI Orchestration:</strong> Full control via <code className="text-purple-300 text-sm">git-ai queue [pause|reorder|group]</code>.</div>
+            <div><strong>Model 1 (Resolution):</strong> Auto-resolves conflicts during the cherry-pick phase based on semantic intent.</div>
+          </li>
+          <li className="flex items-start gap-4">
+            <div className="bg-purple-500/20 p-2 rounded-lg mt-1"><CheckCircle2 className="w-5 h-5 text-purple-400" /></div>
+            <div><strong>Model 2 (Audit & Verify):</strong> Independently audits the final file, verifies the fix, and generates a Confidence Score.</div>
+          </li>
+          <li className="flex items-start gap-4">
+            <div className="bg-purple-500/20 p-2 rounded-lg mt-1"><Database className="w-5 h-5 text-purple-400" /></div>
+            <div><strong>gitflow-audit Repo:</strong> Stores File A, File B, the merged result, and the audit score for perfect traceability.</div>
           </li>
         </ul>
       </div>

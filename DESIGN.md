@@ -45,8 +45,9 @@ To solve the limitations of high-frequency updates and provide a robust historic
 - **Local Cache:** The local SQLite database (`~/.git-ai-context.db`) is no longer a strict requirement. It now acts purely as a high-speed local cache for the `gitflow-audit` repository, ensuring fast CLI responses while maintaining the remote repo as the single source of truth.
 
 ### 3.5 Confidence Scoring & Human Fallback (95/5 Rule)
-GitFlow AI aims to automatically resolve 95% of merge conflicts. For the remaining 5% of highly complex or ambiguous conflicts, the system relies on a Human-in-the-Loop fallback mechanism.
-- **Secondary Review & Scoring:** After generating a merged file, the AI performs a secondary "cherry-pick view" to evaluate the logical integrity of the resolution, assigning it a Confidence Score.
+GitFlow AI aims to automatically resolve 95% of merge conflicts using a **Dual-Model Architecture**. For the remaining 5% of highly complex or ambiguous conflicts, the system relies on a Human-in-the-Loop fallback mechanism.
+- **Phase 1 (Resolution):** The first model auto-resolves the conflict during the cherry-pick or merge process.
+- **Phase 2 (Audit & Verify):** A second, independent model acts as an auditor. It verifies the final commit file against the original conflicting files (File A and File B) to ensure it indeed fixes the conflict issues and generates an audit score.
 - **Auto-Pause / Revert:** If the Confidence Score falls below a defined threshold (e.g., < 0.85), the CLI will automatically **pause the AI merge queue** (or revert the cherry-pick and move to the next item in the queue).
 - **Human Intervention:** The system alerts the engineering team that human intervention is required to manually resolve the specific conflict before the queue can resume.
 
