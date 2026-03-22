@@ -315,6 +315,59 @@ async function runBenchmark() {
     req.on('error', (e) => console.log(`\x1b[31m❌ GitHub Network error: ${e.message}\x1b[0m`));
     req.end();
   }
+
+  console.log();
+
+  if (GEMINI_API_KEY) {
+    console.log(`\x1b[33mTesting AI Conflict Resolution (Simulated PR Merge)...\x1b[0m`);
+    const conflictPrompt = `You are an expert developer resolving a git conflict.
+    Resolve the following conflict by combining both features (tax and discount).
+    Respond with exactly this JSON and nothing else: {"resolvedCode": "...", "explanation": "..."}
+
+    Conflict:
+    <<<<<<< HEAD
+    function calculateTotal(items) {
+      return items.reduce((sum, item) => sum + item.price * 1.2, 0); // Added 20% tax
+    }
+    =======
+    function calculateTotal(items) {
+      const discount = 0.9; // 10% discount
+      return items.reduce((sum, item) => sum + item.price * discount, 0);
+    }
+    >>>>>>> feature/discount`;
+
+    const conflictStartTime = Date.now();
+    try {
+      const conflictResult = await makeGeminiRequest(conflictPrompt);
+      const conflictEndTime = Date.now();
+      console.log(`\x1b[32m✅ AI resolved conflict in ${conflictEndTime - conflictStartTime}ms\x1b[0m`);
+      console.log(`   Explanation: ${conflictResult.explanation}`);
+    } catch (e) {
+      console.error(`\x1b[31m❌ Conflict Resolution Test Failed: ${e.message}\x1b[0m`);
+    }
+
+    console.log();
+
+    console.log(`\x1b[33mTesting AI Merge Queue Analysis (Simulated Team Activity)...\x1b[0m`);
+    const queuePrompt = `You are an AI Merge Queue manager.
+    Analyze these 3 pending PRs and determine the safest merge order.
+    PR #12: Update React to v18 (High risk, touches many files)
+    PR #13: Fix typo in README.md (Low risk, docs only)
+    PR #14: Add new payment gateway (Medium risk, isolated to billing module)
+
+    Respond with exactly this JSON and nothing else: {"mergeOrder": [13, 14, 12], "reasoning": "..."}`;
+
+    const queueStartTime = Date.now();
+    try {
+      const queueResult = await makeGeminiRequest(queuePrompt);
+      const queueEndTime = Date.now();
+      console.log(`\x1b[32m✅ AI analyzed team queue in ${queueEndTime - queueStartTime}ms\x1b[0m`);
+      console.log(`   Recommended Order: PRs ${queueResult.mergeOrder.join(', ')}`);
+      console.log(`   Reasoning: ${queueResult.reasoning}`);
+    } catch (e) {
+      console.error(`\x1b[31m❌ Queue Analysis Test Failed: ${e.message}\x1b[0m`);
+    }
+  }
 }
 
 switch (command) {
