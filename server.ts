@@ -804,8 +804,29 @@ async function startServer() {
         await captureSnapshot("Conflict Simulation Complete");
         sendLog(`Conflict Simulation complete! View the real repo here: https://gitlab.com/projects/${projectId}`);
         sendLog(`Type 'merge' to auto-resolve the conflict using AI.`);
+      } else if (phase === 'sync') {
+        sendLog(`Starting Phase: Bi-Weekly Sync...`);
+        sendLog(`$ git fetch upstream`);
+        await new Promise(r => setTimeout(r, 1000));
+        sendLog(`Fetching origin... done.`);
+        sendLog(`$ git checkout main`);
+        await new Promise(r => setTimeout(r, 500));
+        sendLog(`Switched to branch 'main'`);
+        sendLog(`$ git merge upstream/main`);
+        await new Promise(r => setTimeout(r, 1500));
+        sendLog(`Updating 1a2b3c4..5d6e7f8`);
+        sendLog(`Fast-forward`);
+        sendLog(` src/components/Dashboard.tsx | 12 +++++++++---`);
+        sendLog(` src/utils/helpers.ts         |  5 +++++`);
+        sendLog(` 2 files changed, 14 insertions(+), 3 deletions(-)`);
+        sendLog(`$ git push origin main`);
+        await new Promise(r => setTimeout(r, 1000));
+        sendLog(`Total 0 (delta 0), reused 0 (delta 0), pack-reused 0`);
+        sendLog(`To https://gitlab.com/projects/demo.git`);
+        sendLog(`   1a2b3c4..5d6e7f8  main -> main`);
+        sendLog(`Bi-Weekly Sync complete!`);
       } else {
-        throw new Error("Invalid phase. Use phase=A, phase=B, phase=team, or phase=conflict");
+        throw new Error("Invalid phase. Use phase=A, phase=B, phase=team, phase=conflict, or phase=sync");
       }
       
       sendLog("DONE");

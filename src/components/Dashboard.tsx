@@ -138,7 +138,51 @@ export default function Dashboard() {
     }
   };
 
+  const handlePopulateMockPRs = async () => {
+    try {
+      await addDoc(collection(db, 'pullRequests'), {
+        title: 'Update React to v18',
+        sourceBranch: 'feature/react-18',
+        targetBranch: 'main',
+        authorId: 'alice',
+        status: 'merge_queue',
+        priority: 'high',
+        queuePosition: Date.now(),
+        logs: ['PR created.', 'Added to merge queue.', 'Waiting for AI analysis...'],
+        files: JSON.stringify([{ name: 'package.json', content: '"react": "^18.2.0"' }])
+      });
+
+      await addDoc(collection(db, 'pullRequests'), {
+        title: 'Fix typo in README.md',
+        sourceBranch: 'fix/readme-typo',
+        targetBranch: 'main',
+        authorId: 'bob',
+        status: 'merge_queue',
+        priority: 'low',
+        queuePosition: Date.now() + 1000,
+        logs: ['PR created.', 'Added to merge queue.', 'Waiting for AI analysis...'],
+        files: JSON.stringify([{ name: 'README.md', content: '# GitFlow AI\nFixing a typo here.' }])
+      });
+
+      await addDoc(collection(db, 'pullRequests'), {
+        title: 'Add new payment gateway',
+        sourceBranch: 'feature/stripe-integration',
+        targetBranch: 'main',
+        authorId: 'charlie',
+        status: 'merge_queue',
+        priority: 'normal',
+        queuePosition: Date.now() + 2000,
+        logs: ['PR created.', 'Added to merge queue.', 'Waiting for AI analysis...'],
+        files: JSON.stringify([{ name: 'src/payment.ts', content: 'export const processPayment = () => {};' }])
+      });
+    } catch (error) {
+      console.error("Error populating mock PRs:", error);
+    }
+  };
+
   const handleSimulateTeam = async () => {
+    await handlePopulateMockPRs();
+    
     // Switch to terminal tab
     window.dispatchEvent(new CustomEvent('switch-tab', { detail: { tab: 'terminal' } }));
 
@@ -149,6 +193,22 @@ export default function Dashboard() {
   };
 
   const handleSimulateConflict = async () => {
+    try {
+      await addDoc(collection(db, 'pullRequests'), {
+        title: 'Update Core Configuration',
+        sourceBranch: 'feat/core-config',
+        targetBranch: 'main',
+        authorId: 'dave',
+        status: 'merge_queue',
+        priority: 'high',
+        queuePosition: Date.now(),
+        logs: ['PR created.', 'Added to merge queue.', 'Waiting for AI analysis...'],
+        files: JSON.stringify([{ name: 'src/config.ts', content: '<<<<<<< HEAD\nexport const config = { timeout: 10000, enableCache: true };\n=======\nexport const config = { timeout: 5000, retries: 3 };\n>>>>>>> feat/core-config' }])
+      });
+    } catch (error) {
+      console.error("Error populating conflict PR:", error);
+    }
+
     // Switch to terminal tab
     window.dispatchEvent(new CustomEvent('switch-tab', { detail: { tab: 'terminal' } }));
 
@@ -207,7 +267,7 @@ export default function Dashboard() {
 
         await updateDoc(doc(db, 'pullRequests', pr.id), {
           status: 'merged',
-          logs: [...pr.logs, 'Starting Semantic Intent Analysis...', 'Semantic Intent Analysis complete. Checking for conflicts...', 'Conflict detected! Starting AI conflict resolution...', ...resolveData.logs, 'AI successfully resolved conflicts and merged PR.'],
+          logs: [...pr.logs, 'Starting Semantic Intent Analysis...', 'Semantic Intent Analysis complete. Checking for conflicts...', 'Conflict detected! Starting AI conflict resolution...', ...(resolveData.logs || []), 'AI successfully resolved conflicts and merged PR.'],
           files: JSON.stringify(resolveData.resolvedFiles || [])
         });
         return;
@@ -224,7 +284,7 @@ export default function Dashboard() {
       if (!testData.success) {
         await updateDoc(doc(db, 'pullRequests', pr.id), {
           status: 'failed',
-          logs: [...pr.logs, 'Starting Semantic Intent Analysis...', 'Semantic Intent Analysis complete. Checking for conflicts...', 'No conflicts. Starting AI tests...', ...testData.logs, 'Tests failed.']
+          logs: [...pr.logs, 'Starting Semantic Intent Analysis...', 'Semantic Intent Analysis complete. Checking for conflicts...', 'No conflicts. Starting AI tests...', ...(testData.logs || []), 'Tests failed.']
         });
         return;
       }
@@ -232,7 +292,7 @@ export default function Dashboard() {
       // 3. Update status to merged
       await updateDoc(doc(db, 'pullRequests', pr.id), {
         status: 'merged',
-        logs: [...pr.logs, 'Starting Semantic Intent Analysis...', 'Semantic Intent Analysis complete. Checking for conflicts...', 'No conflicts. Starting AI tests...', ...testData.logs, 'Tests passed. Merging PR...'],
+        logs: [...pr.logs, 'Starting Semantic Intent Analysis...', 'Semantic Intent Analysis complete. Checking for conflicts...', 'No conflicts. Starting AI tests...', ...(testData.logs || []), 'Tests passed. Merging PR...'],
       });
 
     } catch (error) {
@@ -433,6 +493,13 @@ export default function Dashboard() {
             >
               <RefreshCw className={`w-5 h-5 ${isSyncing ? 'animate-spin' : ''}`} />
               {isSyncing ? 'Syncing...' : 'Trigger Bi-Weekly Sync'}
+            </button>
+            <button
+              onClick={handlePopulateMockPRs}
+              className="w-full flex items-center justify-center gap-2 py-3 px-4 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-medium transition-colors"
+            >
+              <GitPullRequest className="w-5 h-5" />
+              Populate Mock PRs
             </button>
             <button
               onClick={handleClearQueue}

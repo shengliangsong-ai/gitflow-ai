@@ -67,7 +67,7 @@ export default function Terminal({ className = "h-[calc(100vh-8rem)]" }: { class
     setHistory(prev => [...prev, { id: Date.now().toString() + Math.random(), type, content }]);
   };
 
-  const runDemo = (phase: 'A' | 'B' | 'team' | 'conflict') => {
+  const runDemo = (phase: 'A' | 'B' | 'team' | 'conflict' | 'sync') => {
     addHistory('output', `Starting Demo Phase: ${phase}...`);
     
     let url = `/api/gitlab/benchmark?phase=${phase}`;
