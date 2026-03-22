@@ -519,6 +519,33 @@ async function runBenchmark() {
     } catch (e) {
       console.error(`\x1b[31m❌ Create Test Failed: ${e.message}\x1b[0m`);
     }
+
+    console.log();
+
+    console.log(`\x1b[33mTesting GitOps Queue Operations (State Branch)...\x1b[0m`);
+    try {
+      const testQueueId = `q-test-${Math.floor(Math.random() * 1000)}`;
+      console.log(`   1. Creating queue state...`);
+      const state = getQueueState();
+      state.queues[testQueueId] = { target: 'main', status: 'Active', branches: ['test-branch-1'] };
+      saveQueueState(state);
+      console.log(`\x1b[32m   ✅ Queue saved to Git branch 'gitflow-ai-state'\x1b[0m`);
+      
+      console.log(`   2. Reading queue state...`);
+      const readState = getQueueState();
+      if (readState.queues[testQueueId]) {
+        console.log(`\x1b[32m   ✅ Successfully read queue '${testQueueId}' from Git\x1b[0m`);
+      } else {
+        throw new Error("Queue not found after saving");
+      }
+
+      console.log(`   3. Cleaning up test queue...`);
+      delete readState.queues[testQueueId];
+      saveQueueState(readState);
+      console.log(`\x1b[32m   ✅ Test queue deleted from Git\x1b[0m`);
+    } catch (e) {
+      console.error(`\x1b[31m❌ GitOps Queue Test Failed: ${e.message}\x1b[0m`);
+    }
   }
 }
 
@@ -590,17 +617,80 @@ async function runCreate(args) {
   console.log(`\x1b[35m[GitFlow AI]\x1b[0m Ready for AI-assisted development.`);
 }
 
+function getQueueState() {
+  try {
+    // Try to read queue.json from the gitflow-ai-state branch
+    const content = execSync('git show gitflow-ai-state:queue.json 2>/dev/null', { encoding: 'utf8' });
+    return JSON.parse(content);
+  } catch (e) {
+    return { queues: {} };
+  }
+}
+
+function saveQueueState(state) {
+  const json = JSON.stringify(state, null, 2);
+  const tmpFile = path.join(os.tmpdir(), 'gitflow-ai-queue.json');
+  fs.writeFileSync(tmpFile, json);
+  
+  try {
+    // 1. Create a blob
+    const blobHash = execSync(`git hash-object -w "${tmpFile}"`, { encoding: 'utf8' }).trim();
+    
+    // 2. Create a tree
+    const treeInput = `100644 blob ${blobHash}\tqueue.json\n`;
+    const treeHash = execSync('git mktree', { input: treeInput, encoding: 'utf8' }).trim();
+    
+    // 3. Create a commit
+    let parentArg = '';
+    try {
+      const parentHash = execSync('git rev-parse gitflow-ai-state 2>/dev/null', { encoding: 'utf8' }).trim();
+      if (parentHash) parentArg = `-p ${parentHash}`;
+    } catch (e) {}
+    
+    const commitHash = execSync(`git commit-tree ${treeHash} ${parentArg} -m "Update AI Queue State"`, { encoding: 'utf8' }).trim();
+    
+    // 4. Update the branch ref
+    execSync(`git update-ref refs/heads/gitflow-ai-state ${commitHash}`);
+    
+    // 5. Try to push to origin (fail silently if no origin)
+    try {
+      execSync('git push origin gitflow-ai-state 2>/dev/null');
+    } catch (e) {}
+    
+  } catch (e) {
+    console.error(`\x1b[31m❌ Failed to save queue state to Git: ${e.message}\x1b[0m`);
+  }
+}
+
 async function runQueue(args) {
   const parts = args.trim().split(' ').filter(Boolean);
   const subCmd = parts[0] || 'list';
+  
+  const state = getQueueState();
 
   if (subCmd === 'status' || subCmd === 'list') {
-    console.log(`\x1b[36m📊 Fetching GitFlow AI Queue status...\x1b[0m`);
-    await new Promise(r => setTimeout(r, 1000));
-    console.log(`\x1b[33mQueue ID: q-1042 (Target: main) - Status: Active\x1b[0m`);
-    console.log(`\n\x1b[35m[Processing]\x1b[0m PR #12: Update React to v18`);
-    console.log(`\x1b[33m[Waiting]\x1b[0m    PR #14: Add new payment gateway`);
-    console.log(`\x1b[33m[Waiting]\x1b[0m    PR #13: Fix typo in README.md`);
+    console.log(`\x1b[36m📊 Fetching GitFlow AI Queue status from 'gitflow-ai-state' branch...\x1b[0m`);
+    const queueIds = Object.keys(state.queues);
+    if (queueIds.length === 0) {
+      console.log(`\x1b[33mNo active queues found. Create one with 'git-ai queue create'.\x1b[0m`);
+      return;
+    }
+    
+    for (const qid of queueIds) {
+      const q = state.queues[qid];
+      console.log(`\n\x1b[33mQueue ID: ${qid} (Target: ${q.target}) - Status: ${q.status}\x1b[0m`);
+      if (q.branches.length === 0) {
+        console.log(`  (Empty queue)`);
+      } else {
+        q.branches.forEach((b, i) => {
+          if (i === 0 && q.status === 'Active') {
+            console.log(`  \x1b[35m[Processing]\x1b[0m ${b}`);
+          } else {
+            console.log(`  \x1b[33m[Waiting]\x1b[0m    ${b}`);
+          }
+        });
+      }
+    }
   } else if (subCmd === 'create') {
     const destBranch = parts[1];
     const sourceBranches = parts.slice(2);
@@ -610,60 +700,61 @@ async function runQueue(args) {
       process.exit(1);
     }
     console.log(`\x1b[36m🚀 Creating new AI Queue for target '${destBranch}' with ${sourceBranches.length} branches...\x1b[0m`);
-    await new Promise(r => setTimeout(r, 1000));
     const queueId = `q-${Math.floor(Math.random() * 10000)}`;
-    console.log(`\x1b[32m✅ Queue '${queueId}' created successfully.\x1b[0m`);
+    state.queues[queueId] = { target: destBranch, status: 'Active', branches: sourceBranches };
+    saveQueueState(state);
+    console.log(`\x1b[32m✅ Queue '${queueId}' created successfully and saved to Git.\x1b[0m`);
   } else if (subCmd === 'delete') {
     const queueId = parts[1];
-    if (!queueId) {
-      console.log(`\x1b[31m❌ Error: Missing queue_id.\x1b[0m`);
-      console.log(`Usage: git-ai queue delete <queue_id>`);
+    if (!queueId || !state.queues[queueId]) {
+      console.log(`\x1b[31m❌ Error: Queue '${queueId}' not found.\x1b[0m`);
       process.exit(1);
     }
     console.log(`\x1b[36m🗑️ Deleting queue '${queueId}'...\x1b[0m`);
-    await new Promise(r => setTimeout(r, 500));
+    delete state.queues[queueId];
+    saveQueueState(state);
     console.log(`\x1b[32m✅ Queue '${queueId}' deleted.\x1b[0m`);
   } else if (subCmd === 'add') {
     const queueId = parts[1];
     const sourceBranches = parts.slice(2);
-    if (!queueId || sourceBranches.length === 0) {
-      console.log(`\x1b[31m❌ Error: Missing queue_id or source branches.\x1b[0m`);
-      console.log(`Usage: git-ai queue add <queue_id> <source_branch(es)>`);
+    if (!queueId || sourceBranches.length === 0 || !state.queues[queueId]) {
+      console.log(`\x1b[31m❌ Error: Invalid queue_id or missing branches.\x1b[0m`);
       process.exit(1);
     }
     console.log(`\x1b[36m➕ Adding branches [${sourceBranches.join(', ')}] to queue '${queueId}'...\x1b[0m`);
-    await new Promise(r => setTimeout(r, 500));
+    state.queues[queueId].branches.push(...sourceBranches);
+    saveQueueState(state);
     console.log(`\x1b[32m✅ Branches added to queue '${queueId}'.\x1b[0m`);
   } else if (subCmd === 'remove') {
     const queueId = parts[1];
     const sourceBranches = parts.slice(2);
-    if (!queueId || sourceBranches.length === 0) {
-      console.log(`\x1b[31m❌ Error: Missing queue_id or source branches.\x1b[0m`);
-      console.log(`Usage: git-ai queue remove <queue_id> <source_branch(es)>`);
+    if (!queueId || sourceBranches.length === 0 || !state.queues[queueId]) {
+      console.log(`\x1b[31m❌ Error: Invalid queue_id or missing branches.\x1b[0m`);
       process.exit(1);
     }
     console.log(`\x1b[36m➖ Removing branches [${sourceBranches.join(', ')}] from queue '${queueId}'...\x1b[0m`);
-    await new Promise(r => setTimeout(r, 500));
+    state.queues[queueId].branches = state.queues[queueId].branches.filter(b => !sourceBranches.includes(b));
+    saveQueueState(state);
     console.log(`\x1b[32m✅ Branches removed from queue '${queueId}'.\x1b[0m`);
   } else if (subCmd === 'pause') {
     const queueId = parts[1];
-    if (!queueId) {
-      console.log(`\x1b[31m❌ Error: Missing queue_id.\x1b[0m`);
-      console.log(`Usage: git-ai queue pause <queue_id>`);
+    if (!queueId || !state.queues[queueId]) {
+      console.log(`\x1b[31m❌ Error: Queue '${queueId}' not found.\x1b[0m`);
       process.exit(1);
     }
     console.log(`\x1b[36m⏸️ Pausing queue '${queueId}'...\x1b[0m`);
-    await new Promise(r => setTimeout(r, 500));
+    state.queues[queueId].status = 'Paused';
+    saveQueueState(state);
     console.log(`\x1b[32m✅ Queue '${queueId}' paused.\x1b[0m`);
   } else if (subCmd === 'resume') {
     const queueId = parts[1];
-    if (!queueId) {
-      console.log(`\x1b[31m❌ Error: Missing queue_id.\x1b[0m`);
-      console.log(`Usage: git-ai queue resume <queue_id>`);
+    if (!queueId || !state.queues[queueId]) {
+      console.log(`\x1b[31m❌ Error: Queue '${queueId}' not found.\x1b[0m`);
       process.exit(1);
     }
     console.log(`\x1b[36m▶️ Resuming queue '${queueId}'...\x1b[0m`);
-    await new Promise(r => setTimeout(r, 500));
+    state.queues[queueId].status = 'Active';
+    saveQueueState(state);
     console.log(`\x1b[32m✅ Queue '${queueId}' resumed.\x1b[0m`);
   } else {
     console.log(`\x1b[31m❌ Unknown queue command: ${subCmd}\x1b[0m`);
