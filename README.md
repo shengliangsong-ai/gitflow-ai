@@ -5,9 +5,20 @@ GitFlow AI is an advanced, AI-powered Git workflow simulator and auto-merging to
 ## Features
 - **AI Merge Queue**: Automatically groups and merges PRs based on semantic intent.
 - **Conflict Resolution**: Uses Gemini to analyze code intent and automatically resolve Git merge conflicts.
-- **GitLab Integration**: Syncs directly with GitLab repositories, creates branches, and commits resolved files.
+- **GitOps State Management**: Uses a hidden `gitflow-ai-state` branch to manage the queue state directly in the repository without a central database.
+- **Enterprise Audit Trail**: Syncs all AI operations and conversation context to a dedicated `gitflow-audit` repository.
+- **GitLab/GitHub Integration**: Syncs directly with repositories, creates branches, and commits resolved files.
 - **Interactive CLI Terminal**: A built-in terminal to simulate team activity, trigger conflicts, and run AI auto-merges.
 - **Live Architecture & Roadmap**: Visualizes the system architecture and future roadmap.
+
+## 🏗️ Architecture
+
+GitFlow AI uses a unique **GitOps-native architecture**. Instead of relying on a centralized database (like PostgreSQL or MongoDB) to manage the merge queue, it uses the Git repository itself as the source of truth.
+
+1. **The State Branch:** The entire AI merge queue state is stored in a hidden, orphaned branch named `gitflow-ai-state`. When a developer runs `git-ai queue add`, the CLI uses Git plumbing commands to update a `queue.json` file directly in the repository.
+2. **The Audit Repository:** To prevent the main repository from being bloated by high-frequency AI logs, all operational data and conversation contexts are stored in a separate `gitflow-audit` repository. The local SQLite database (`~/.git-ai-context.db`) acts purely as a high-speed local cache for this remote repository.
+
+For more details, see the [ARCHITECTURE.md](ARCHITECTURE.md) and [PITCH.md](PITCH.md) files.
 
 ## 🚀 Running Locally on a Private Company Network
 
