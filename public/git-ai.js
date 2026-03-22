@@ -75,6 +75,8 @@ if (!command || command === 'help' || command === '--version' || command === '-v
   console.log('  status    Check the status of the global merge queue and verify tokens');
   console.log('  benchmark Run a self-test to measure API latency and verify connections');
   console.log('  *         Any other command falls back to standard git');
+  console.log('\nNote: AI context history is automatically saved to a local SQLite database');
+  console.log('(~/.git-ai-context.db) to maintain conversation state across commands.');
   process.exit(0);
 }
 
@@ -82,10 +84,97 @@ if (command !== 'benchmark') {
   console.log(`\x1b[35m[AI GitFlow]\x1b[0m Intercepting git ${command}...`);
 }
 
+class ContextManager {
+  constructor() {
+    this.dbPath = path.join(os.homedir(), '.git-ai-context.db');
+    this.jsonPath = path.join(os.homedir(), '.git-ai-context.json');
+    this.useSqlite = false;
+    this.db = null;
+
+    try {
+      const Database = require('better-sqlite3');
+      this.db = new Database(this.dbPath);
+      this.db.exec(`
+        CREATE TABLE IF NOT EXISTS history (
+          id INTEGER PRIMARY KEY AUTOINCREMENT,
+          role TEXT NOT NULL,
+          content TEXT NOT NULL,
+          timestamp DATETIME DEFAULT CURRENT_TIMESTAMP
+        )
+      `);
+      this.useSqlite = true;
+    } catch (e) {
+      if (!fs.existsSync(this.jsonPath)) {
+        fs.writeFileSync(this.jsonPath, JSON.stringify([]), 'utf8');
+      }
+    }
+  }
+
+  getHistory(limit = 10) {
+    let rows = [];
+    if (this.useSqlite) {
+      try {
+        rows = this.db.prepare('SELECT role, content FROM history ORDER BY id DESC LIMIT ?').all(limit).reverse();
+      } catch (e) {
+        // Ignore
+      }
+    } else {
+      try {
+        const data = JSON.parse(fs.readFileSync(this.jsonPath, 'utf8'));
+        rows = data.slice(-limit);
+      } catch (e) {
+        // Ignore
+      }
+    }
+
+    const validHistory = [];
+    let expectedRole = 'user';
+    for (const row of rows) {
+      if (row.role === expectedRole) {
+        validHistory.push({
+          role: row.role,
+          parts: [{ text: row.content }]
+        });
+        expectedRole = expectedRole === 'user' ? 'model' : 'user';
+      }
+    }
+    
+    if (validHistory.length > 0 && validHistory[validHistory.length - 1].role === 'user') {
+      validHistory.pop();
+    }
+
+    return validHistory;
+  }
+
+  saveMessage(role, content) {
+    if (this.useSqlite) {
+      try {
+        this.db.prepare('INSERT INTO history (role, content) VALUES (?, ?)').run(role, content);
+      } catch (e) {
+        // Ignore
+      }
+    } else {
+      try {
+        const data = JSON.parse(fs.readFileSync(this.jsonPath, 'utf8'));
+        data.push({ role, content, timestamp: new Date().toISOString() });
+        if (data.length > 100) data.shift();
+        fs.writeFileSync(this.jsonPath, JSON.stringify(data), 'utf8');
+      } catch (e) {
+        // Ignore
+      }
+    }
+  }
+}
+
+const contextManager = new ContextManager();
+
 function makeGeminiRequest(prompt) {
   return new Promise((resolve, reject) => {
+    const history = contextManager.getHistory(10);
+    const contents = [...history, { role: "user", parts: [{ text: prompt }] }];
+
     const postData = JSON.stringify({
-      contents: [{ parts: [{ text: prompt }] }],
+      contents: contents,
       generationConfig: { responseMimeType: "application/json" }
     });
 
@@ -107,6 +196,10 @@ function makeGeminiRequest(prompt) {
           try {
             const parsed = JSON.parse(data);
             let text = parsed.candidates[0].content.parts[0].text;
+            
+            contextManager.saveMessage("user", prompt);
+            contextManager.saveMessage("model", text);
+
             if (text.startsWith('```json')) text = text.substring(7);
             if (text.startsWith('```')) text = text.substring(3);
             if (text.endsWith('```')) text = text.substring(0, text.length - 3);
