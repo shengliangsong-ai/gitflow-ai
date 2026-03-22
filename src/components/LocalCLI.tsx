@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Terminal, Download, Command, GitCommit, GitPullRequest, GitMerge, Copy, Check, Github, Gitlab } from 'lucide-react';
+import { Terminal, Download, Command, GitCommit, GitPullRequest, GitMerge, Copy, Check, Github, Gitlab, RefreshCw, PlusCircle } from 'lucide-react';
 
 export default function LocalCLI() {
   const [copied, setCopied] = useState(false);
@@ -97,6 +97,18 @@ export default function LocalCLI() {
             </code>
           </div>
         </div>
+
+        <div className="mt-6 bg-indigo-500/10 border border-indigo-500/20 rounded-lg p-4">
+          <h4 className="text-sm font-semibold text-indigo-300 mb-2">Required Token Permissions:</h4>
+          <ul className="text-sm text-zinc-400 space-y-2 list-disc list-inside">
+            <li>
+              <strong className="text-zinc-300">GitHub:</strong> Select the <code className="text-indigo-300">repo</code> scope (Full control of private repositories). Also select <code className="text-indigo-300">read:user</code> if you want to run the benchmark test.
+            </li>
+            <li>
+              <strong className="text-zinc-300">GitLab:</strong> Select the <code className="text-indigo-300">api</code> scope (Grants complete read/write access to the API). Alternatively, select <code className="text-indigo-300">read_repository</code>, <code className="text-indigo-300">write_repository</code>, and <code className="text-indigo-300">read_api</code>.
+            </li>
+          </ul>
+        </div>
         
         <p className="text-xs text-zinc-500 mt-4">
           Requires Node.js and Git to be installed on your system.
@@ -127,13 +139,13 @@ export default function LocalCLI() {
             Automated Merge Queue
           </h2>
           <p className="text-zinc-400 text-sm mb-4">
-            Push your code with <code className="text-indigo-300">git-ai push</code> to automatically register your branch with the global AI merge queue.
+            Push your code with <code className="text-indigo-300">git-ai push</code> to automatically register your branch with the global GitFlow AI queue.
           </p>
           <div className="bg-zinc-950 border border-zinc-800 rounded-lg p-4 font-mono text-sm">
             <div className="text-zinc-500">$ git-ai push origin feature/login</div>
             <div className="text-fuchsia-400 mt-2">[AI GitFlow] Intercepting git push...</div>
             <div className="text-zinc-300">Counting objects: 3, done.</div>
-            <div className="text-cyan-400 mt-1">🚀 Push detected. Registering with AI Merge Queue...</div>
+            <div className="text-cyan-400 mt-1">🚀 Push detected. Registering with GitFlow AI Queue...</div>
             <div className="text-emerald-400">✅ PR added to queue. Run 'git-ai status' to monitor.</div>
           </div>
         </div>
@@ -167,6 +179,54 @@ export default function LocalCLI() {
             <div className="text-fuchsia-400 mt-2">[AI GitFlow] Intercepting git cherry-pick...</div>
             <div className="text-cyan-400">🍒 AI is monitoring your cherry-pick for conflict resolution...</div>
             <div className="text-zinc-300 mt-1">[main a1b2c3d] Applied specific commit changes</div>
+          </div>
+        </div>
+
+        <div className="bg-zinc-900 border border-zinc-800 rounded-xl p-6 shadow-xl">
+          <h2 className="text-lg font-semibold text-white mb-4 flex items-center gap-2">
+            <PlusCircle className="w-5 h-5 text-indigo-400" />
+            AI Repository Scaffolding
+          </h2>
+          <p className="text-zinc-400 text-sm mb-4">
+            Run <code className="text-indigo-300">git-ai create &lt;url&gt;</code> to generate a new repository with AI-powered scaffolding.
+          </p>
+          <div className="bg-zinc-950 border border-zinc-800 rounded-lg p-4 font-mono text-sm">
+            <div className="text-zinc-500">$ git-ai create https://github.com/org/new-repo</div>
+            <div className="text-fuchsia-400 mt-2">[AI GitFlow] Intercepting create...</div>
+            <div className="text-cyan-400">✨ Generating AI scaffolding for new repository...</div>
+            <div className="text-emerald-400 mt-1">✅ Repository created. AI generated initial README, .gitignore, and CI/CD pipelines.</div>
+          </div>
+        </div>
+
+        <div className="bg-zinc-900 border border-zinc-800 rounded-xl p-6 shadow-xl">
+          <h2 className="text-lg font-semibold text-white mb-4 flex items-center gap-2">
+            <Download className="w-5 h-5 text-indigo-400" />
+            Cross-Platform Clone
+          </h2>
+          <p className="text-zinc-400 text-sm mb-4">
+            Run <code className="text-indigo-300">git-ai clone &lt;url&gt;</code> to clone and migrate repositories seamlessly between GitHub and GitLab.
+          </p>
+          <div className="bg-zinc-950 border border-zinc-800 rounded-lg p-4 font-mono text-sm">
+            <div className="text-zinc-500">$ git-ai clone https://github.com/org/repo</div>
+            <div className="text-fuchsia-400 mt-2">[AI GitFlow] Intercepting clone...</div>
+            <div className="text-cyan-400">🔄 Migrating repository to local-repo...</div>
+            <div className="text-emerald-400 mt-1">✅ Successfully cloned and migrated repository.</div>
+          </div>
+        </div>
+
+        <div className="bg-zinc-900 border border-zinc-800 rounded-xl p-6 shadow-xl">
+          <h2 className="text-lg font-semibold text-white mb-4 flex items-center gap-2">
+            <RefreshCw className="w-5 h-5 text-indigo-400" />
+            Cross-Platform Sync
+          </h2>
+          <p className="text-zinc-400 text-sm mb-4">
+            Run <code className="text-indigo-300">git-ai sync &lt;repoA&gt; &lt;repoB&gt;</code> to synchronize codebases across different platforms with AI conflict resolution.
+          </p>
+          <div className="bg-zinc-950 border border-zinc-800 rounded-lg p-4 font-mono text-sm">
+            <div className="text-zinc-500">$ git-ai sync repoA repoB</div>
+            <div className="text-fuchsia-400 mt-2">[AI GitFlow] Initiating cross-platform synchronization...</div>
+            <div className="text-cyan-400">🧠 Applying GitFlow AI Queue for conflict resolution...</div>
+            <div className="text-emerald-400 mt-1">✅ Synchronization complete. Both repositories are now identical.</div>
           </div>
         </div>
 

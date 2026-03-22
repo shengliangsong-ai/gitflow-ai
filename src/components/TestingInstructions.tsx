@@ -5,7 +5,7 @@ import Mermaid from './Mermaid';
 const markdownContent = `
 ## 🧪 Testing Instructions
 
-Welcome to the AI Merge Queue (GitFlow AI v2) demo! Our application is designed to be fully verifiable. You can test the core functionality directly through the web interface.
+Welcome to the GitFlow AI demo! Our application is designed to be fully verifiable. You can test the core functionality directly through the web interface.
 
 \`\`\`mermaid
 graph TD
@@ -14,7 +14,7 @@ graph TD
     C --> D[Run Live GitHub Sync]
     D --> E[Start Phase A: Devs push code]
     E --> F[Start Phase B: Merge & Conflict]
-    F --> G{AI Merge Queue}
+    F --> G{GitFlow AI Queue}
     G -->|Semantic Resolution| H[Merge Success]
     H --> I[Test Built-in Benchmark]
     I --> J[Test Local CLI]
@@ -50,7 +50,7 @@ This is the core demonstration of our technology. We will simulate a real-world 
     *   *What's happening:* The system simulates two developers creating separate feature branches and making conflicting changes to the same files.
 5.  **Start Phase B (Merge):** After Phase A completes, click the **"Start Phase B (Merge)"** button.
     *   *What's happening:* The system attempts to merge both branches into \`main\`. A merge conflict will occur.
-6.  **Watch the AI Resolve:** Pay close attention to the terminal output. You will see the system detect the conflict, pause, and hand the conflict over to the AI Merge Queue. The AI will analyze the AST, resolve the conflict semantically, and complete the merge automatically.
+6.  **Watch the AI Resolve:** Pay close attention to the terminal output. You will see the system detect the conflict, pause, and hand the conflict over to the GitFlow AI Queue. The AI will analyze the AST, resolve the conflict semantically, and complete the merge automatically.
 7.  **Verify the Graph:** Look at the Live Git Graph to confirm that the branches have been successfully merged into \`main\`.
 
 ### Step 4: Test the Built-in Benchmark

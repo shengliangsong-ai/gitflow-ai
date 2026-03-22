@@ -46,7 +46,7 @@ const slides = [
     id: 3,
     title: "Key Features & Demo Highlights",
     icon: <Award className="w-12 h-12 text-emerald-400" />,
-    speechText: "Here are our key features and demo highlights. First, git-ai commit analyzes staged files locally and catches bugs before the commit is created. Second, git-ai push pushes code and automatically registers it with the global A I Merge Queue. Third, git-ai rebase monitors the rebase process and suggests resolutions for conflicts. Finally, we are fully integrated with the GitLab Browser S D K to track C L I commands and dashboard usage.",
+    speechText: "Here are our key features and demo highlights. First, git-ai commit analyzes staged files locally and catches bugs before the commit is created. Second, git-ai push pushes code and automatically registers it with the global GitFlow A I Queue. Third, git-ai rebase monitors the rebase process and suggests resolutions for conflicts. Finally, we are fully integrated with the GitLab Browser S D K to track C L I commands and dashboard usage.",
     content: (
       <div className="space-y-6 text-xl text-zinc-300">
         <ul className="space-y-6">
@@ -56,7 +56,7 @@ const slides = [
           </li>
           <li className="flex items-start gap-4">
             <div className="bg-indigo-500/20 p-2 rounded-lg mt-1"><code className="text-indigo-400 text-sm">git-ai push</code></div>
-            <div>Pushes code and automatically registers it with the global AI Merge Queue.</div>
+            <div>Pushes code and automatically registers it with the global GitFlow AI Queue.</div>
           </li>
           <li className="flex items-start gap-4">
             <div className="bg-indigo-500/20 p-2 rounded-lg mt-1"><code className="text-indigo-400 text-sm">git-ai rebase</code></div>

@@ -530,7 +530,7 @@ export default function Dashboard() {
           <div className="flex items-center justify-between mb-6">
             <h2 className="text-lg font-semibold flex items-center gap-2">
               <GitPullRequest className="w-5 h-5 text-indigo-400" />
-              AI Merge Queue
+              GitFlow AI Queue
             </h2>
             <div className="text-sm text-zinc-400">
               {pullRequests.filter(pr => ['code_review', 'addressing_comments', 'merge_queue', 'merging', 'testing', 'conflict'].includes(pr.status)).length} Active
@@ -542,7 +542,7 @@ export default function Dashboard() {
               <div className="text-center py-12 text-zinc-500">
                 <GitPullRequest className="w-12 h-12 mx-auto mb-3 opacity-20" />
                 <p>No pull requests in the queue.</p>
-                <p className="text-sm mt-2">Click "Simulate Team Activity" or "Simulate Conflict" to see the AI Merge Queue in action.</p>
+                <p className="text-sm mt-2">Click "Simulate Team Activity" or "Simulate Conflict" to see GitFlow AI in action.</p>
               </div>
             ) : (
               sortedPRs.map(pr => (
