@@ -89,7 +89,7 @@ const slides = [
           </li>
           <li className="flex items-start gap-4">
             <div className="bg-purple-500/20 p-2 rounded-lg mt-1"><Database className="w-5 h-5 text-purple-400" /></div>
-            <div><strong>gitflow-audit Repo:</strong> Stores File A, File B, the merged result, and the audit score for perfect traceability.</div>
+            <div><strong>100% Traceability:</strong> All <code className="text-purple-300 text-sm">git-ai</code> operations are traceable in the <code>gitflow-audit</code> repo, storing File A, File B, the merged result, and the audit score.</div>
           </li>
         </ul>
       </div>
@@ -97,9 +97,9 @@ const slides = [
   },
   {
     id: 4.5,
-    title: "100% GitOps Architecture",
+    title: "100% GitOps & Full Traceability",
     icon: <Network className="w-12 h-12 text-blue-400" />,
-    speechText: "Our architecture is 100% GitOps native. We don't use a central database. The merge queue state is stored in a hidden gitflow A I state branch. All A I operations, conflict artifacts, and conversation context are synced to a dedicated gitflow audit repository. This provides an enterprise-grade, immutable audit log while keeping the C L I lightning fast.",
+    speechText: "Our architecture is 100% GitOps native. We don't use a central database. The merge queue state is stored in a hidden gitflow A I state branch. Most importantly, all git dash A I operations are traceable in the gitflow audit repository. Every decision, conflict artifact, and conversation context is synced here. This eliminates the A I black box and provides an enterprise-grade, immutable audit log.",
     content: (
       <div className="w-full h-full -mt-4 flex flex-col items-center justify-center">
         <div className="w-full max-w-4xl bg-zinc-950 border border-zinc-800 rounded-xl p-6">

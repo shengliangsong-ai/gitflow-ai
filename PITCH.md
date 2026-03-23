@@ -34,10 +34,10 @@ We use the Git repository itself as the source of truth.
 ---
 
 ## Slide 5: Enterprise-Grade Audit Trail
-**The `gitflow-audit` Repository**
-To prevent the main repository from being bloated by high-frequency updates, we introduced a dedicated audit repository.
-- **Conflict Artifacts:** When a conflict occurs, File A, File B, the AI model parameters, and the final merged file are all saved to the audit repo for perfect traceability.
+**100% Traceability in `gitflow-audit`**
+To prevent the main repository from being bloated by high-frequency updates, we introduced a dedicated audit repository. All `git-ai` operations are traceable in the `gitflow-audit` repo, eliminating the AI "black box".
 - **Immutable Logs:** Every AI decision, conflict resolution, and queue modification is committed as a JSON log entry.
+- **Conflict Artifacts:** When a conflict occurs, File A, File B, the AI model parameters, and the final merged file are all saved to the audit repo for perfect traceability.
 - **Context Sync:** The developer's conversational history with the AI is synced to `gitflow-audit/<username>/context.json`.
 - **High-Speed Local Cache:** A local SQLite database acts purely as a fast cache, ensuring the CLI remains lightning-fast.
 

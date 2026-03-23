@@ -39,7 +39,7 @@ The CLI manages the queue state directly in the user's repository without requir
 
 ### 3.4 Audit & Context Management (`gitflow-audit` repo)
 To solve the limitations of high-frequency updates and provide a robust historical audit trail, all AI operations and conversation contexts are stored in a dedicated, separate repository named `gitflow-audit`.
-- **Audit Trail:** Every AI action (queue changes, conflict resolutions, code reviews) is committed as a JSON log entry to the `gitflow-audit` repository. This provides an enterprise-grade, immutable audit log.
+- **100% Traceability:** All `git-ai` operations are fully traceable in the `gitflow-audit` repo. Every AI action (queue changes, conflict resolutions, code reviews) is committed as a JSON log entry. This eliminates the AI "black box" and provides an enterprise-grade, immutable audit log.
 - **Context & Parameters:** The AI model's parameters, prompts, and raw responses are saved alongside the developer's conversation history (`context.json`).
 - **Conflict Artifacts:** When a merge conflict occurs between File A and File B, both original files, the AI's parameters, and the final AI-generated merged file are checked into the audit repo. This allows for perfect traceability of how a conflict was resolved.
 - **Local Cache:** The local SQLite database (`~/.git-ai-context.db`) is no longer a strict requirement. It now acts purely as a high-speed local cache for the `gitflow-audit` repository, ensuring fast CLI responses while maintaining the remote repo as the single source of truth.
