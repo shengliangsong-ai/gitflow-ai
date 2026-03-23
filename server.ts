@@ -349,8 +349,17 @@ async function startServer() {
             await execPromise(`git checkout ${localBranch}`, { cwd: tempDir });
             
             sendLog(`Comparing ${localBranch} and ${githubBranch} to find missing PRs...`);
+            
+            // Get all commit messages in the local branch to avoid duplicate cherry-picks
+            const { stdout: localLog } = await execPromise(`git log ${localBranch} --format="%s"`, { cwd: tempDir });
+            const localMessages = new Set(localLog.split('\n').map(m => m.trim()).filter(m => m !== ''));
+            
             const { stdout: logOut } = await execPromise(`git log ${localBranch}..${githubBranch} --oneline`, { cwd: tempDir });
-            const missingCommits = logOut.split('\n').filter(line => line.trim() !== '').reverse();
+            const missingCommits = logOut.split('\n').filter(line => {
+                if (!line.trim()) return false;
+                const message = line.substring(line.indexOf(' ') + 1).trim();
+                return !localMessages.has(message);
+            }).reverse();
             
             if (missingCommits.length > 0) {
                 sendLog(`Found ${missingCommits.length} missing PRs/commits.`);
