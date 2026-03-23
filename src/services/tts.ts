@@ -50,41 +50,48 @@ async function cacheAudio(text: string, base64Data: string): Promise<void> {
   }
 }
 
-export async function generateSpeech(text: string): Promise<string | null> {
+export async function generateSpeech(text: string, retries = 2): Promise<string | null> {
   const cached = await getCachedAudio(text);
   if (cached) {
     console.log("Using cached audio from IndexedDB");
     return cached;
   }
 
-  try {
-    const response = await ai.models.generateContent({
-      model: "gemini-2.5-flash-preview-tts",
-      contents: [{ parts: [{ text: text }] }],
-      config: {
-        responseModalities: [Modality.AUDIO],
-        speechConfig: {
-          voiceConfig: {
-            prebuiltVoiceConfig: { voiceName: 'Kore' },
+  for (let attempt = 0; attempt <= retries; attempt++) {
+    try {
+      const response = await ai.models.generateContent({
+        model: "gemini-2.5-flash-preview-tts",
+        contents: [{ parts: [{ text: text }] }],
+        config: {
+          responseModalities: [Modality.AUDIO],
+          speechConfig: {
+            voiceConfig: {
+              prebuiltVoiceConfig: { voiceName: 'Kore' },
+            },
           },
         },
-      },
-    });
+      });
 
-    const base64Audio = response.candidates?.[0]?.content?.parts?.[0]?.inlineData?.data;
-    if (base64Audio) {
-      await cacheAudio(text, base64Audio);
-      return base64Audio;
+      const base64Audio = response.candidates?.[0]?.content?.parts?.[0]?.inlineData?.data;
+      if (base64Audio) {
+        await cacheAudio(text, base64Audio);
+        return base64Audio;
+      }
+      return null;
+    } catch (error: any) {
+      console.error(`Error generating speech (attempt ${attempt + 1}):`, error);
+      if (attempt < retries) {
+        // Exponential backoff: 2s, 4s
+        await new Promise(resolve => setTimeout(resolve, Math.pow(2, attempt + 1) * 1000));
+      }
     }
-    return null;
-  } catch (error) {
-    console.error("Error generating speech:", error);
-    return null;
   }
+  return null;
 }
 
 export async function playBase64Pcm(base64Data: string, sampleRate: number = 24000, signal?: AbortSignal): Promise<void> {
   return new Promise((resolve, reject) => {
+    let audioContext: AudioContext | null = null;
     try {
       const binaryString = window.atob(base64Data);
       const len = binaryString.length;
@@ -95,6 +102,10 @@ export async function playBase64Pcm(base64Data: string, sampleRate: number = 240
       
       // Ensure length is even for Int16Array
       const validLength = bytes.length % 2 === 0 ? bytes.length : bytes.length - 1;
+      
+      if (validLength === 0) {
+        throw new Error("Audio data is empty");
+      }
       
       // Convert to Int16Array (PCM 16-bit)
       const buffer = new ArrayBuffer(validLength);
@@ -110,7 +121,7 @@ export async function playBase64Pcm(base64Data: string, sampleRate: number = 240
         float32Array[i] = int16Array[i] / 32768.0;
       }
       
-      const audioContext = new (window.AudioContext || (window as any).webkitAudioContext)();
+      audioContext = new (window.AudioContext || (window as any).webkitAudioContext)();
       const audioBuffer = audioContext.createBuffer(1, float32Array.length, sampleRate);
       audioBuffer.getChannelData(0).set(float32Array);
       
@@ -123,7 +134,7 @@ export async function playBase64Pcm(base64Data: string, sampleRate: number = 240
       source.onended = () => {
         if (isEnded) return;
         isEnded = true;
-        audioContext.close().catch(console.error);
+        audioContext?.close().catch(console.error);
         resolve();
       };
       
@@ -132,7 +143,7 @@ export async function playBase64Pcm(base64Data: string, sampleRate: number = 240
           if (isEnded) return;
           isEnded = true;
           try { source.stop(); } catch (e) {}
-          audioContext.close().catch(console.error);
+          audioContext?.close().catch(console.error);
           resolve(); // Resolve early when aborted
         });
       }
@@ -140,6 +151,9 @@ export async function playBase64Pcm(base64Data: string, sampleRate: number = 240
       source.start(0);
     } catch (error) {
       console.error("Error playing audio:", error);
+      if (audioContext) {
+        audioContext.close().catch(console.error);
+      }
       reject(error);
     }
   });

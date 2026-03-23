@@ -249,25 +249,6 @@ export default function Presentation() {
     return () => clearInterval(interval);
   }, [isPlayingAI]);
 
-  useEffect(() => {
-    let isMounted = true;
-    
-    // Preload audio sequentially in the background
-    const preloadAudio = async () => {
-      for (const slide of slides) {
-        if (!isMounted) break;
-        // This will fetch and cache in IndexedDB if not already cached
-        await generateSpeech(slide.speechText);
-      }
-    };
-    
-    preloadAudio();
-    
-    return () => {
-      isMounted = false;
-    };
-  }, []);
-
   const toggleAIPresentation = () => {
     if (isPlayingAI) {
       setIsPlayingAI(false);
