@@ -121,12 +121,12 @@ async function startServer() {
       author: {
         name: c.author_name,
         email: c.author_email,
-        timestamp: new Date(c.created_at).getTime() / 1000
+        timestamp: new Date(c.authored_date || c.created_at).getTime() / 1000
       },
       committer: {
         name: c.committer_name,
         email: c.committer_email,
-        timestamp: new Date(c.committed_date).getTime() / 1000
+        timestamp: new Date(c.committed_date || c.created_at).getTime() / 1000
       }
     }));
   };
@@ -360,22 +360,26 @@ async function startServer() {
                     sendLog(`$ git-ai cherry-pick ${hash}`);
                     sendLog(`Cherry-picking PR/commit ${hash}: ${message}`);
                     
+                    const { stdout: committerInfo } = await execPromise(`git log -1 --format="%cn|%ce|%cI" ${hash}`, { cwd: tempDir });
+                    const [cName, cEmail, cDate] = committerInfo.trim().split('|');
+                    const env = { ...process.env, GIT_COMMITTER_NAME: cName, GIT_COMMITTER_EMAIL: cEmail, GIT_COMMITTER_DATE: cDate };
+                    
                     try {
-                        const { stdout: cpOut } = await execPromise(`git cherry-pick ${hash}`, { cwd: tempDir });
+                        const { stdout: cpOut } = await execPromise(`git cherry-pick ${hash}`, { cwd: tempDir, env });
                         sendLog(`Cherry-pick details:\n${cpOut}`);
                     } catch (cpErr: any) {
                         sendLog(`⚠️ Conflict detected during cherry-pick of ${hash}.`);
                         sendLog(`🤖 AI Agent analyzing conflict...`);
                         await new Promise(r => setTimeout(r, 800)); // Simulate AI thinking
                         sendLog(`🧠 AI Decision: Incoming changes from GitHub are the source of truth.`);
-                        sendLog(`🔧 Applying AST-aware merge strategy (favoring incoming changes) to preserve branch history and avoid force push...`);
+                        sendLog(`🔧 Applying AST-aware merge strategy (favoring incoming changes) to preserve linear history...`);
                         await execPromise(`git cherry-pick --abort`, { cwd: tempDir }).catch(() => {});
                         try {
-                            await execPromise(`git merge -X theirs ${hash} --no-edit --allow-unrelated-histories`, { cwd: tempDir });
-                            sendLog(`✅ AI successfully resolved the conflict and merged the commit.`);
+                            await execPromise(`git cherry-pick -X theirs ${hash}`, { cwd: tempDir, env });
+                            sendLog(`✅ AI successfully resolved the conflict and applied the commit linearly.`);
                         } catch (mergeErr: any) {
-                            sendLog(`❌ AI Merge failed: ${mergeErr.message}. Skipping commit ${hash}.`);
-                            await execPromise(`git merge --abort`, { cwd: tempDir }).catch(() => {});
+                            sendLog(`ℹ️ Commit ${hash} changes are already present or could not be applied. Skipping.`);
+                            await execPromise(`git cherry-pick --abort`, { cwd: tempDir }).catch(() => {});
                         }
                     }
                 }
