@@ -93,10 +93,13 @@ export async function playBase64Pcm(base64Data: string, sampleRate: number = 240
         bytes[i] = binaryString.charCodeAt(i);
       }
       
+      // Ensure length is even for Int16Array
+      const validLength = bytes.length % 2 === 0 ? bytes.length : bytes.length - 1;
+      
       // Convert to Int16Array (PCM 16-bit)
-      const buffer = new ArrayBuffer(bytes.length);
+      const buffer = new ArrayBuffer(validLength);
       const view = new DataView(buffer);
-      for (let i = 0; i < bytes.length; i++) {
+      for (let i = 0; i < validLength; i++) {
         view.setUint8(i, bytes[i]);
       }
       const int16Array = new Int16Array(buffer);
@@ -115,13 +118,21 @@ export async function playBase64Pcm(base64Data: string, sampleRate: number = 240
       source.buffer = audioBuffer;
       source.connect(audioContext.destination);
       
+      let isEnded = false;
+      
       source.onended = () => {
+        if (isEnded) return;
+        isEnded = true;
+        audioContext.close().catch(console.error);
         resolve();
       };
       
       if (signal) {
         signal.addEventListener('abort', () => {
-          source.stop();
+          if (isEnded) return;
+          isEnded = true;
+          try { source.stop(); } catch (e) {}
+          audioContext.close().catch(console.error);
           resolve(); // Resolve early when aborted
         });
       }
