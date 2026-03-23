@@ -13,10 +13,11 @@ export default function Roadmap() {
           
           <h2 className="text-xl font-semibold text-white mt-8 mb-4">Architecture Overview</h2>
           <ul className="list-disc pl-6 space-y-2 text-zinc-300">
+            <li><strong>Source Repo:</strong> GitHub ([shengliangsong-ai/gitflow-ai](https://github.com/shengliangsong-ai/gitflow-ai)).</li>
+            <li><strong>Final Repo:</strong> GitLab ([gitlab-ai-hackathon/participants/35450504](https://gitlab.com/gitlab-ai-hackathon/participants/35450504)).</li>
             <li><strong>Frontend:</strong> React, Tailwind CSS, Lucide Icons.</li>
             <li><strong>Backend:</strong> Node.js Express server handling AI API calls (Gemini 3.1 Pro).</li>
             <li><strong>Database:</strong> Firebase Firestore for real-time state synchronization.</li>
-            <li><strong>Hosting:</strong> Firebase Hosting & Cloud Run.</li>
           </ul>
 
           <h2 className="text-xl font-semibold text-white mt-8 mb-4">Core Capabilities</h2>

@@ -140,7 +140,7 @@ const slides = [
     id: 6,
     title: "Live Demo: Real-Time & Real APIs",
     icon: <Terminal className="w-12 h-12 text-cyan-400" />,
-    speechText: "Let's see it in action. This is our live benchmark demo. Importantly, our project source itself is the real-time live demo. When you click 'Sync Github', it automatically syncs the source code from GitHub to GitLab using real GitHub tokens and APIs—this is not a simulation or a mock. The Git Tree View dashboard allows judges to see the source code directly in real-time.",
+    speechText: "Let's see it in action. This is our live benchmark demo. Importantly, our project source itself is the real-time live demo. When you click 'Sync Git', it automatically syncs the source code from GitHub to GitLab using real GitHub tokens and APIs—this is not a simulation or a mock. The Git Tree View dashboard allows judges to see the source code directly in real-time.",
     content: (
       <div className="w-full h-full -mt-4 space-y-4">
         <div className="bg-cyan-500/10 border border-cyan-500/30 p-4 rounded-lg mb-4">
@@ -149,7 +149,7 @@ const slides = [
             Our project source itself is the real-time live demo!
           </p>
           <p className="text-zinc-300 text-sm mt-2">
-            "Sync Github" uses <strong>real GitHub tokens and APIs</strong> (not a simulation nor mock) to sync source code to GitLab. The Git Tree View dashboard lets you see the source code live.
+            "Sync Git" uses <strong>real GitHub tokens and APIs</strong> (not a simulation nor mock) to sync source code from GitHub to GitLab. The Git Tree View dashboard lets you see the source code live.
           </p>
         </div>
         <TerminalComponent className="h-[400px]" />

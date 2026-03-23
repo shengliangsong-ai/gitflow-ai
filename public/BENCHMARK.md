@@ -3,6 +3,8 @@
 ## Overview
 The `git-ai benchmark` command is a built-in self-test suite designed to prove the efficacy and accuracy of the Semantic Orchestration Layer. Instead of running a local simulation, this command interacts directly with the **real GitLab API** to create a live repository, simulate developer activity, generate merge conflicts, and resolve them using Gemini 3.1 Pro.
 
+Our final hackathon repository is: [https://gitlab.com/gitlab-ai-hackathon/participants/35450504.git](https://gitlab.com/gitlab-ai-hackathon/participants/35450504.git).
+
 ## How It Works
 When you run `git-ai benchmark` in the terminal, the system executes the following steps in real-time:
 

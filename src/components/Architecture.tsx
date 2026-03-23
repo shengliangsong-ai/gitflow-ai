@@ -33,7 +33,7 @@ export const SvgDiagram = () => (
     {/* Git Provider */}
     <rect x="50" y="160" width="150" height="80" rx="8" fill="url(#grad4)" />
     <text x="125" y="195" fill="white" fontSize="16" fontWeight="bold" textAnchor="middle" dominantBaseline="middle">Git Provider</text>
-    <text x="125" y="215" fill="white" fontSize="12" textAnchor="middle" dominantBaseline="middle">(GitHub/GitLab)</text>
+    <text x="125" y="215" fill="white" fontSize="10" textAnchor="middle" dominantBaseline="middle">GitHub (Source) / GitLab (Final)</text>
 
     {/* Orchestrator */}
     <rect x="325" y="60" width="150" height="80" rx="8" fill="url(#grad1)" />

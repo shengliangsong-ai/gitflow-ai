@@ -11,7 +11,7 @@ Welcome to the GitFlow AI demo! Our application is designed to be fully verifiab
 graph TD
     A[Start: Open App] --> B[Explore Dashboard & UI]
     B --> C[Play AI Pitch]
-    C --> D[Run Live GitHub Sync]
+    C --> D[Run Live Git Sync]
     D --> E[Start Phase A: Devs push code]
     E --> F[Start Phase B: Merge & Conflict]
     F --> G{GitFlow AI Queue}
@@ -39,11 +39,11 @@ graph TD
 3.  **Verify:** The application should automatically advance through the presentation slides while playing an AI-generated voiceover explaining the project. 
 4.  *Note: You can pause or stop the pitch at any time using the provided controls.*
 
-### Step 3: Run the Live GitHub Sync & AI Merge Demo
+### Step 3: Run the Live Git Sync & AI Merge Demo
 This is the core demonstration of our technology. We will simulate a real-world scenario where multiple developers push conflicting code.
 
-1.  **Start the Sync:** In the top navigation bar, click the **"Sync GitHub"** button.
-    *   *What's happening:* The backend is actively cloning our real GitHub repository and syncing it to a GitLab instance.
+1.  **Start the Sync:** In the top navigation bar, click the **"Sync Git"** button.
+    *   *What's happening:* The backend is actively cloning our real GitHub repository (https://github.com/shengliangsong-ai/gitflow-ai) and syncing it to our final hackathon GitLab repository (https://gitlab.com/gitlab-ai-hackathon/participants/35450504.git).
 2.  **Watch the Terminal:** The UI will automatically switch to the **CLI Terminal** tab. Watch the terminal output as it logs the sync progress.
 3.  **Observe the Git Graph:** On the right side of the CLI Terminal, you will see the **Live Git Graph** begin to populate with commits in real-time.
 4.  **Start Phase A (Dev):** Once the sync is complete, click the **"Start Phase A (Dev)"** button below the terminal.
@@ -66,7 +66,7 @@ This is the core demonstration of our technology. We will simulate a real-world 
 3.  Click through the simulated commands (e.g., \`git-ai commit\`, \`git-ai push\`, \`git-ai benchmark\`) to see how the local CLI intercepts standard Git commands to provide AI feedback before code is pushed to the queue.
 
 ### Troubleshooting
-*   **Sync Fails:** If the "Sync GitHub" process fails or hangs, click the **"Reset Demo"** button in the CLI Terminal tab and try again.
+*   **Sync Fails:** If the "Sync Git" process fails or hangs, click the **"Reset Demo"** button in the CLI Terminal tab and try again.
 *   **No Audio:** If the AI Pitch has no audio, ensure your browser tab is not muted and that you have interacted with the page (some browsers block autoplay audio until the user clicks somewhere on the page).
 `;
 

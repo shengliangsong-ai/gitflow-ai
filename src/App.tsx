@@ -91,7 +91,7 @@ export default function App() {
                   className={`flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium transition-colors ${isSyncing ? 'bg-zinc-800 text-zinc-500 cursor-not-allowed' : 'bg-purple-600/20 text-purple-400 hover:bg-purple-600/30 hover:text-purple-300'}`}
                 >
                   <RefreshCw className={`w-4 h-4 ${isSyncing ? 'animate-spin' : ''}`} />
-                  {isSyncing ? 'Syncing...' : 'Sync GitHub'}
+                  {isSyncing ? 'Syncing...' : 'Sync Git'}
                 </button>
                 <button
                   onClick={() => setActiveTab('dashboard')}
@@ -198,7 +198,7 @@ export default function App() {
               className={`w-full flex items-center gap-2 px-3 py-3 rounded-lg text-sm font-medium transition-colors ${isSyncing ? 'bg-zinc-800 text-zinc-500 cursor-not-allowed' : 'bg-purple-600/20 text-purple-400 hover:bg-purple-600/30'}`}
             >
               <RefreshCw className={`w-4 h-4 ${isSyncing ? 'animate-spin' : ''}`} />
-              {isSyncing ? 'Syncing...' : 'Sync GitHub'}
+              {isSyncing ? 'Syncing...' : 'Sync Git'}
             </button>
             <button
               onClick={() => { setActiveTab('dashboard'); setIsMobileMenuOpen(false); }}

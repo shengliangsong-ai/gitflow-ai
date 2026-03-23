@@ -20,6 +20,20 @@ GitFlow AI uses a unique **GitOps-native architecture**. Instead of relying on a
 
 For more details, see the [ARCHITECTURE.md](ARCHITECTURE.md) and [PITCH.md](PITCH.md) files.
 
+## 🚀 Hackathon Repositories & Sync Process
+
+Our final hackathon repository is:
+**GitLab:** [https://gitlab.com/gitlab-ai-hackathon/participants/35450504.git](https://gitlab.com/gitlab-ai-hackathon/participants/35450504.git)
+
+Our source repository is:
+**GitHub:** [https://github.com/shengliangsong-ai/gitflow-ai](https://github.com/shengliangsong-ai/gitflow-ai)
+
+### Sync Workflow
+The **"Sync Git"** process follows this flow:
+**Google AI Studio** ==> **GitHub** ==> **GitLab**
+
+This ensures that the latest AI-generated code from Google AI Studio is pushed to GitHub, and then synchronized to the final GitLab hackathon repository.
+
 ## 🚀 Running Locally on a Private Company Network
 
 GitFlow AI is designed to be easily cloned and run locally. This is ideal for enterprise teams who want to run the application behind a corporate firewall or within a private company network.

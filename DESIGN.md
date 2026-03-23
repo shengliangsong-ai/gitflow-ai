@@ -9,7 +9,8 @@ The application is built as a modern web application with the following stack:
 - **Backend:** Express.js (Node.js)
 - **Database/State:** Firebase Firestore (for real-time dashboard state) and GitOps State Branch (for CLI queue state)
 - **AI Integration:** Google Gemini API (`@google/genai`)
-- **Git Integration:** GitHub/GitLab API
+- **Git Integration:** GitHub ([shengliangsong-ai/gitflow-ai](https://github.com/shengliangsong-ai/gitflow-ai)) and GitLab ([gitlab-ai-hackathon/participants/35450504](https://gitlab.com/gitlab-ai-hackathon/participants/35450504)) APIs.
+- **Sync Process:** Google AI Studio ==> GitHub ==> GitLab.
 
 ### 2.1 Core Components
 1. **Dashboard:** The central hub displaying the Git Tree View, Workflow Actions, and the AI Merge Queue.

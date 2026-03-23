@@ -14,9 +14,9 @@ graph TD
     end
 
     subgraph Remote Infrastructure
-        MainRepo[(Main Repository)]
+        MainRepo[(Main Repository: GitHub)]
         StateBranch([Branch: gitflow-ai-state])
-        AuditRepo[(gitflow-audit Repository)]
+        AuditRepo[(gitflow-audit Repository: GitLab)]
         Gemini[Google Gemini 3.1 Pro]
         Dashboard[Web Dashboard]
     end
@@ -31,6 +31,9 @@ graph TD
     CLI -->|Fetches queue.json| StateBranch
     CLI -->|Commits updated queue.json| StateBranch
     LocalRepo -->|Pushes Code/PRs| MainRepo
+    
+    %% Sync Process
+    MainRepo -->|Sync Git| AuditRepo
     
     %% CLI to Audit Repo
     CLI -->|Syncs Context & Logs| AuditRepo
