@@ -107,7 +107,7 @@ export function initAudioContext() {
 }
 
 export async function playBase64Pcm(base64Data: string, sampleRate: number = 24000, signal?: AbortSignal): Promise<void> {
-  return new Promise((resolve, reject) => {
+  return new Promise(async (resolve, reject) => {
     try {
       const audioContext = initAudioContext();
       
@@ -125,45 +125,109 @@ export async function playBase64Pcm(base64Data: string, sampleRate: number = 240
         throw new Error("Audio data is empty");
       }
       
-      // Convert to Int16Array (PCM 16-bit)
-      const buffer = new ArrayBuffer(validLength);
-      const view = new DataView(buffer);
-      for (let i = 0; i < validLength; i++) {
-        view.setUint8(i, bytes[i]);
+      let audioBuffer: AudioBuffer;
+      try {
+        // Try decoding as a media file (WAV, MP3, etc.)
+        const bufferCopy = bytes.buffer.slice(0);
+        audioBuffer = await new Promise<AudioBuffer>((res, rej) => {
+          let isDone = false;
+          const timeout = setTimeout(() => {
+            if (!isDone) {
+              isDone = true;
+              rej(new Error("decodeAudioData timeout"));
+            }
+          }, 1000); // 1 second timeout for decoding
+          
+          try {
+            const decodeResult = audioContext.decodeAudioData(
+              bufferCopy,
+              (decoded) => {
+                if (!isDone) {
+                  isDone = true;
+                  clearTimeout(timeout);
+                  res(decoded);
+                }
+              },
+              (err) => {
+                if (!isDone) {
+                  isDone = true;
+                  clearTimeout(timeout);
+                  rej(err);
+                }
+              }
+            );
+            if (decodeResult) {
+              decodeResult.then((decoded) => {
+                if (!isDone) {
+                  isDone = true;
+                  clearTimeout(timeout);
+                  res(decoded);
+                }
+              }).catch((err) => {
+                if (!isDone) {
+                  isDone = true;
+                  clearTimeout(timeout);
+                  rej(err);
+                }
+              });
+            }
+          } catch (e) {
+            if (!isDone) {
+              isDone = true;
+              clearTimeout(timeout);
+              rej(e);
+            }
+          }
+        });
+      } catch (e) {
+        // Fallback to raw PCM 16-bit
+        console.log("decodeAudioData failed, falling back to raw PCM", e);
+        
+        const buffer = new ArrayBuffer(validLength);
+        const view = new DataView(buffer);
+        for (let i = 0; i < validLength; i++) {
+          view.setUint8(i, bytes[i]);
+        }
+        const int16Array = new Int16Array(buffer);
+        
+        const float32Array = new Float32Array(int16Array.length);
+        for (let i = 0; i < int16Array.length; i++) {
+          float32Array[i] = int16Array[i] / 32768.0;
+        }
+        
+        audioBuffer = audioContext.createBuffer(1, float32Array.length, sampleRate);
+        audioBuffer.getChannelData(0).set(float32Array);
       }
-      const int16Array = new Int16Array(buffer);
-      
-      // Convert to Float32Array for Web Audio API
-      const float32Array = new Float32Array(int16Array.length);
-      for (let i = 0; i < int16Array.length; i++) {
-        float32Array[i] = int16Array[i] / 32768.0;
-      }
-      
-      const audioBuffer = audioContext.createBuffer(1, float32Array.length, sampleRate);
-      audioBuffer.getChannelData(0).set(float32Array);
       
       const source = audioContext.createBufferSource();
       source.buffer = audioBuffer;
       source.connect(audioContext.destination);
       
       let isEnded = false;
+      let timeoutId: any;
       
-      source.onended = () => {
+      const finish = () => {
         if (isEnded) return;
         isEnded = true;
+        clearTimeout(timeoutId);
         resolve();
       };
+      
+      source.onended = finish;
       
       if (signal) {
         signal.addEventListener('abort', () => {
           if (isEnded) return;
-          isEnded = true;
           try { source.stop(); } catch (e) {}
-          resolve(); // Resolve early when aborted
+          finish(); // Resolve early when aborted
         });
       }
       
       source.start(0);
+      
+      // Fallback timeout in case onended never fires (e.g., context suspended)
+      const durationMs = (audioBuffer.duration * 1000) + 2000; // Add 2 seconds buffer
+      timeoutId = setTimeout(finish, durationMs);
     } catch (error) {
       console.error("Error playing audio:", error);
       reject(error);

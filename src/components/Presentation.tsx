@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Presentation as PresentationIcon, ChevronRight, ChevronLeft, Play, Award, Zap, GitMerge, Terminal, StopCircle, Loader2, Sparkles, Clock, CheckCircle2, Network, Database } from 'lucide-react';
-import { generateSpeech, playBase64Pcm } from '../services/tts';
+import { generateSpeech, playBase64Pcm, initAudioContext } from '../services/tts';
 import { SvgDiagram } from './Architecture';
 
 const slides = [
@@ -262,9 +262,7 @@ export default function Presentation() {
       }
     } else {
       // Initialize AudioContext synchronously on user interaction to prevent browser autoplay blocking
-      import('../services/tts').then(({ initAudioContext }) => {
-        initAudioContext();
-      }).catch(console.error);
+      initAudioContext();
       
       setIsPlayingAI(true);
       playRef.current = true;
