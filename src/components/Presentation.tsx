@@ -261,6 +261,11 @@ export default function Presentation() {
         abortControllerRef.current.abort();
       }
     } else {
+      // Initialize AudioContext synchronously on user interaction to prevent browser autoplay blocking
+      import('../services/tts').then(({ initAudioContext }) => {
+        initAudioContext();
+      }).catch(console.error);
+      
       setIsPlayingAI(true);
       playRef.current = true;
       if (currentSlide === slides.length - 1) {

@@ -94,10 +94,23 @@ export async function generateSpeech(text: string, retries = 2, signal?: AbortSi
   return null;
 }
 
+let sharedAudioContext: AudioContext | null = null;
+
+export function initAudioContext() {
+  if (!sharedAudioContext || sharedAudioContext.state === 'closed') {
+    sharedAudioContext = new (window.AudioContext || (window as any).webkitAudioContext)();
+  }
+  if (sharedAudioContext.state === 'suspended') {
+    sharedAudioContext.resume().catch(console.error);
+  }
+  return sharedAudioContext;
+}
+
 export async function playBase64Pcm(base64Data: string, sampleRate: number = 24000, signal?: AbortSignal): Promise<void> {
   return new Promise((resolve, reject) => {
-    let audioContext: AudioContext | null = null;
     try {
+      const audioContext = initAudioContext();
+      
       const binaryString = window.atob(base64Data);
       const len = binaryString.length;
       const bytes = new Uint8Array(len);
@@ -126,7 +139,6 @@ export async function playBase64Pcm(base64Data: string, sampleRate: number = 240
         float32Array[i] = int16Array[i] / 32768.0;
       }
       
-      audioContext = new (window.AudioContext || (window as any).webkitAudioContext)();
       const audioBuffer = audioContext.createBuffer(1, float32Array.length, sampleRate);
       audioBuffer.getChannelData(0).set(float32Array);
       
@@ -139,7 +151,6 @@ export async function playBase64Pcm(base64Data: string, sampleRate: number = 240
       source.onended = () => {
         if (isEnded) return;
         isEnded = true;
-        audioContext?.close().catch(console.error);
         resolve();
       };
       
@@ -148,7 +159,6 @@ export async function playBase64Pcm(base64Data: string, sampleRate: number = 240
           if (isEnded) return;
           isEnded = true;
           try { source.stop(); } catch (e) {}
-          audioContext?.close().catch(console.error);
           resolve(); // Resolve early when aborted
         });
       }
@@ -156,9 +166,6 @@ export async function playBase64Pcm(base64Data: string, sampleRate: number = 240
       source.start(0);
     } catch (error) {
       console.error("Error playing audio:", error);
-      if (audioContext) {
-        audioContext.close().catch(console.error);
-      }
       reject(error);
     }
   });
