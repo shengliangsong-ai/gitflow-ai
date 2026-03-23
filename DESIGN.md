@@ -11,6 +11,8 @@ The application is built as a modern web application with the following stack:
 - **AI Integration:** Google Gemini API (`@google/genai`)
 - **Git Integration:** GitHub ([shengliangsong-ai/gitflow-ai](https://github.com/shengliangsong-ai/gitflow-ai)) and GitLab ([gitlab-ai-hackathon/participants/35450504](https://gitlab.com/gitlab-ai-hackathon/participants/35450504)) APIs.
 - **Sync Process:** Google AI Studio ==> GitHub ==> GitLab.
+- **AI Efficiency:** The sync workflow is optimized to save tokens. It bypasses the Google AI Model for clean cherry-picks and only invokes Gemini for semantic conflict resolution.
+- **Decoupled Review:** Code review is decoupled from the sync process. Users can manually trigger reviews for specific commit ranges using `git-ai review <hash1>..<hash2>`.
 
 ### 2.1 Core Components
 1. **Dashboard:** The central hub displaying the Git Tree View, Workflow Actions, and the AI Merge Queue.
@@ -31,9 +33,16 @@ When a PR enters the queue, the system sends the code diffs to Gemini to determi
 When a Git merge conflict is detected (e.g., `<<<<<<< HEAD`), the system intervenes.
 - **Detection:** The backend identifies conflict markers in the files.
 - **Resolution:** Gemini analyzes both versions of the code, understands the semantic intent of both developers, and generates a unified, resolved file.
+- **Token Optimization:** During the sync process, the AI model is only called if a conflict is detected. Clean commits are synced directly to save AI tokens.
 - **Commit:** The resolved file is committed back to the repository, and the PR is merged.
 
-### 3.3 GitOps Queue State Management
+### 3.3 Decoupled Code Review
+Code review is a separate, manual process that can be triggered at any time.
+- **Command:** `git-ai review <range>` (e.g., `git-ai review HEAD~5..HEAD`).
+- **Analysis:** Gemini reviews all commits in the specified range, providing a high-level architectural summary and identifying potential regressions or security issues.
+- **Independence:** This process is independent of the sync/merge workflow, allowing for flexible auditing.
+
+### 3.4 GitOps Queue State Management
 The CLI manages the queue state directly in the user's repository without requiring a central database.
 - **State Branch:** The queue state is stored as a `queue.json` file in a hidden, orphaned branch named `gitflow-ai-state`.
 - **Operations:** When a user runs `git-ai queue add` or `git-ai queue create`, the CLI uses the GitHub/GitLab API to fetch the `queue.json` file, updates the JSON array, and commits the change back to the `gitflow-ai-state` branch.

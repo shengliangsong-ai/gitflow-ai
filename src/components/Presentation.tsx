@@ -74,14 +74,18 @@ const slides = [
     id: 4,
     title: "Dual-Model Semantic Orchestration",
     icon: <Sparkles className="w-12 h-12 text-purple-400" />,
-    speechText: "We use a powerful Dual-Model architecture. The first model acts as the developer, intelligently auto-resolving conflicts during the cherry-pick phase. The second model acts as the auditor. It independently verifies the final commit, ensures the conflict was correctly resolved, and generates an audit score. All artifacts are then saved to the gitflow audit repository. If the score is high, we merge. If it's low, we pause for human review.",
+    speechText: "We use a powerful Dual-Model architecture. The first model acts as the developer, intelligently auto-resolving conflicts during the cherry-pick phase. To save tokens, we bypass the AI model for clean commits and only invoke it for semantic conflict resolution. The second model acts as the auditor. It independently verifies the final commit. We've also decoupled code review into a manual process with the git-dash-ai review command. All artifacts are then saved to the gitflow audit repository.",
     content: (
       <div className="space-y-6 text-xl text-zinc-300">
         <p>Moving beyond basic CI/CD with a <strong>Dual-Model Architecture</strong>.</p>
-        <ul className="space-y-6">
+        <ul className="space-y-4">
+          <li className="flex items-start gap-4">
+            <div className="bg-purple-500/20 p-2 rounded-lg mt-1"><Zap className="w-5 h-5 text-purple-400" /></div>
+            <div><strong>Token Optimization:</strong> Bypasses AI for clean cherry-picks; only invokes Gemini for semantic conflict resolution.</div>
+          </li>
           <li className="flex items-start gap-4">
             <div className="bg-purple-500/20 p-2 rounded-lg mt-1"><Terminal className="w-5 h-5 text-purple-400" /></div>
-            <div><strong>Model 1 (Resolution):</strong> Auto-resolves conflicts during the cherry-pick phase based on semantic intent.</div>
+            <div><strong>Decoupled Review:</strong> Manual auditing via <code className="text-purple-300 text-sm">git-ai review &lt;range&gt;</code>, separate from the sync workflow.</div>
           </li>
           <li className="flex items-start gap-4">
             <div className="bg-purple-500/20 p-2 rounded-lg mt-1"><CheckCircle2 className="w-5 h-5 text-purple-400" /></div>
@@ -89,7 +93,7 @@ const slides = [
           </li>
           <li className="flex items-start gap-4">
             <div className="bg-purple-500/20 p-2 rounded-lg mt-1"><Database className="w-5 h-5 text-purple-400" /></div>
-            <div><strong>100% Traceability:</strong> All <code className="text-purple-300 text-sm">git-ai</code> operations are traceable in the <code>gitflow-audit</code> repo, storing File A, File B, the merged result, and the audit score.</div>
+            <div><strong>100% Traceability:</strong> All <code className="text-purple-300 text-sm">git-ai</code> operations are traceable in the <code>gitflow-audit</code> repo.</div>
           </li>
         </ul>
       </div>

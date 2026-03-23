@@ -185,6 +185,7 @@ export default function Terminal({ className = "h-[calc(100vh-8rem)]" }: { class
   benchmark <phase>        - Run a benchmark phase (A, B, team, conflict)
   merge                    - Auto-resolve conflicts and merge
   sync                     - Sync with GitHub
+  review <range>           - Review a range of commits (e.g. hash1..hash2)
   clear                    - Clear terminal history`);
           break;
 
@@ -221,6 +222,26 @@ export default function Terminal({ className = "h-[calc(100vh-8rem)]" }: { class
 
         case 'sync':
           syncGithub();
+          break;
+
+        case 'review':
+          if (!args[1]) throw new Error('Usage: review <hash1>..<hash2>');
+          if (!projectId) throw new Error('Project ID is missing. Run a benchmark phase first.');
+          
+          addHistory('output', `🤖 AI Agent reviewing commit range: ${args[1]}...`);
+          const reviewRes = await fetch('/api/cli/review-range', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ projectId, range: args[1] })
+          });
+          
+          if (!reviewRes.ok) throw new Error(`Review failed: ${await reviewRes.text()}`);
+          const reviewData = await reviewRes.json();
+          
+          addHistory('output', `\n--- AI CODE REVIEW ---\n${reviewData.review}\n----------------------`);
+          if (reviewData.blockCommit) {
+            addHistory('error', '⚠️ AI Review detected critical issues in this range.');
+          }
           break;
 
         case 'clear':

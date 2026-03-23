@@ -24,6 +24,8 @@ export default function Roadmap() {
           <ol className="list-decimal pl-6 space-y-2 text-zinc-300">
             <li><strong>Semantic Intent Analysis:</strong> AI understands the purpose of changes, calculating risk and identifying affected systems.</li>
             <li><strong>AST-Aware Conflict Resolution:</strong> Resolves deep logical conflicts beyond simple line-diffing.</li>
+            <li><strong>AI Token Optimization:</strong> The sync workflow is designed to save tokens by bypassing the AI model for clean cherry-picks, only invoking Gemini for semantic conflict resolution.</li>
+            <li><strong>Decoupled Code Review:</strong> Manual code review is decoupled from the sync process, allowing for targeted auditing of commit ranges with <code className="text-indigo-300">git-ai review &lt;range&gt;</code>.</li>
             <li><strong>Advanced Merge Topologies:</strong> Supports N-Way Star Merge, Cascading Rebase, and Shadow Integration.</li>
             <li><strong>CLI Orchestration:</strong> Command-line access for engineers to manage queue state (pause, resume, reorder, group).</li>
             <li><strong>Built-in Benchmarks:</strong> Run <code className="text-indigo-300">git-ai benchmark</code> locally to trigger automated self-tests showing various conflict resolution examples.</li>

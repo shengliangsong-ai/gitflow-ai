@@ -79,6 +79,8 @@ To prevent the main repository from being bloated by high-frequency AI logs, all
 ### 4. Dual-Model AI Engine (Google Gemini 3.1 Pro)
 The intelligence layer utilizes two distinct model phases to ensure safety and accuracy:
 - **Phase 1: Resolution Model:** Performs Semantic Intent Analysis to understand *why* code was written and intelligently combines divergent code paths during a cherry-pick or merge.
+- **AI Token Optimization:** During the sync workflow, the system is designed to save tokens by bypassing the AI model for clean cherry-picks. Gemini is only invoked when a Git conflict is detected, ensuring efficient use of AI resources.
+- **Decoupled Code Review:** Code review is a separate, manual process triggered by the `git-ai review <range>` command. This allows developers to audit specific commit ranges independently of the automated sync/merge process.
 - **Phase 2: Audit & Verification Model:** An independent model evaluation that reviews the final AI-generated merged file against the original conflicting files (File A and File B). It verifies that the conflict was correctly resolved without introducing syntax or logical errors.
 - **Confidence Scoring (95/5 Rule):** The Audit Model assigns a Confidence Score. If the score is low (representing the 5% of conflicts the AI cannot confidently resolve), the CLI automatically pauses the merge queue or reverts the cherry-pick, alerting a human developer to intervene.
 
