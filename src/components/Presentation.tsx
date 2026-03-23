@@ -194,10 +194,11 @@ export default function Presentation() {
       if (!playRef.current) return;
       
       setIsGenerating(true);
+      abortControllerRef.current = new AbortController();
       const text = slides[currentSlide].speechText;
-      const audioData = await generateSpeech(text);
+      const audioData = await generateSpeech(text, 2, abortControllerRef.current.signal);
       
-      if (!isMounted || !playRef.current) {
+      if (!isMounted || !playRef.current || abortControllerRef.current.signal.aborted) {
         setIsGenerating(false);
         return;
       }
@@ -206,18 +207,21 @@ export default function Presentation() {
       
       if (audioData) {
         try {
-          abortControllerRef.current = new AbortController();
           await playBase64Pcm(audioData, 24000, abortControllerRef.current.signal);
         } catch (e) {
           console.error("Playback failed", e);
-          await new Promise(resolve => setTimeout(resolve, 5000));
+          if (!abortControllerRef.current.signal.aborted) {
+            await new Promise(resolve => setTimeout(resolve, 5000));
+          }
         }
       } else {
         // Fallback if TTS fails: just wait a few seconds
-        await new Promise(resolve => setTimeout(resolve, 5000));
+        if (!abortControllerRef.current.signal.aborted) {
+          await new Promise(resolve => setTimeout(resolve, 5000));
+        }
       }
       
-      if (!isMounted || !playRef.current) return;
+      if (!isMounted || !playRef.current || abortControllerRef.current.signal.aborted) return;
       
       if (currentSlide < slides.length - 1) {
         setCurrentSlide(prev => prev + 1);

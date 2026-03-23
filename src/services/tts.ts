@@ -2,7 +2,7 @@ import { GoogleGenAI, Modality } from "@google/genai";
 
 const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
 
-const DB_NAME = 'ai-gitflow-tts';
+const DB_NAME = 'ai-gitflow-tts-v2';
 const STORE_NAME = 'audio-cache';
 
 function initDB(): Promise<IDBDatabase> {
@@ -50,7 +50,7 @@ async function cacheAudio(text: string, base64Data: string): Promise<void> {
   }
 }
 
-export async function generateSpeech(text: string, retries = 2): Promise<string | null> {
+export async function generateSpeech(text: string, retries = 2, signal?: AbortSignal): Promise<string | null> {
   const cached = await getCachedAudio(text);
   if (cached) {
     console.log("Using cached audio from IndexedDB");
@@ -58,6 +58,8 @@ export async function generateSpeech(text: string, retries = 2): Promise<string 
   }
 
   for (let attempt = 0; attempt <= retries; attempt++) {
+    if (signal?.aborted) return null;
+    
     try {
       const response = await ai.models.generateContent({
         model: "gemini-2.5-flash-preview-tts",
@@ -72,6 +74,8 @@ export async function generateSpeech(text: string, retries = 2): Promise<string 
         },
       });
 
+      if (signal?.aborted) return null;
+
       const base64Audio = response.candidates?.[0]?.content?.parts?.[0]?.inlineData?.data;
       if (base64Audio) {
         await cacheAudio(text, base64Audio);
@@ -79,6 +83,7 @@ export async function generateSpeech(text: string, retries = 2): Promise<string 
       }
       return null;
     } catch (error: any) {
+      if (signal?.aborted) return null;
       console.error(`Error generating speech (attempt ${attempt + 1}):`, error);
       if (attempt < retries) {
         // Exponential backoff: 2s, 4s
