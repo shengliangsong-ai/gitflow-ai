@@ -75,7 +75,7 @@ export default function LocalCLI() {
             </p>
             <div className="bg-zinc-950 border border-zinc-800 rounded-lg p-3">
               <code className="text-emerald-400 font-mono text-sm block overflow-x-auto whitespace-nowrap">
-                curl -sL https://gitlab.com/shengliang.song.ai/gitflow-ai/-/raw/main/public/git-ai.js -o ~/.local/bin/git-ai && chmod +x ~/.local/bin/git-ai
+                curl -sL https://gitlab.com/gitlab-ai-hackathon/participants/35450504/-/raw/main/public/git-ai.js -o ~/.local/bin/git-ai && chmod +x ~/.local/bin/git-ai
               </code>
             </div>
           </div>

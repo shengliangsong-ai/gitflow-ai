@@ -26,8 +26,12 @@ export default function Dashboard() {
         if (res.ok) {
           const data = await res.json();
           setProjects(data);
+          const hackathonProject = data.find((p: any) => p.name === '35450504' || p.path === '35450504');
           const gitflowProject = data.find((p: any) => p.name === 'gitflow-ai');
-          if (gitflowProject) {
+          
+          if (hackathonProject) {
+            setSelectedProjectId(hackathonProject.id.toString());
+          } else if (gitflowProject) {
             setSelectedProjectId(gitflowProject.id.toString());
           } else {
             // Auto create gitflow-ai if it doesn't exist

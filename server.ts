@@ -247,38 +247,53 @@ async function startServer() {
     try {
       sendLog("Starting GitHub to GitLab Sync...");
       
-      // 1. Create or get GitLab project 'gitflow-ai'
-      sendLog("Checking for existing 'gitflow-ai' project in GitLab...");
-      const searchRes = await fetch(`https://gitlab.com/api/v4/projects?search=gitflow-ai&owned=true`, {
+      // 1. Get specific GitLab project for hackathon
+      const projectPath = "gitlab-ai-hackathon/participants/35450504";
+      sendLog(`Connecting to GitLab project: ${projectPath}...`);
+      
+      const projectRes = await fetch(`https://gitlab.com/api/v4/projects/${encodeURIComponent(projectPath)}`, {
         headers: { "PRIVATE-TOKEN": token }
       });
-      const searchData = await searchRes.json();
       
       let projectId;
       let gitlabRepoUrl;
       
-      const existingProject = searchData.find((p: any) => p.name === "gitflow-ai");
-      if (existingProject) {
-        projectId = existingProject.id;
-        gitlabRepoUrl = existingProject.http_url_to_repo;
-        sendLog(`Found existing project 'gitflow-ai' (ID: ${projectId})`);
+      if (projectRes.ok) {
+        const projectData = await projectRes.json();
+        projectId = projectData.id;
+        gitlabRepoUrl = projectData.http_url_to_repo;
+        sendLog(`Found hackathon project (ID: ${projectId})`);
       } else {
-        sendLog("Creating new project 'gitflow-ai' in GitLab...");
-        const createRes = await fetch(`https://gitlab.com/api/v4/projects`, {
-          method: "POST",
-          headers: { "PRIVATE-TOKEN": token, "Content-Type": "application/json" },
-          body: JSON.stringify({
-            name: "gitflow-ai",
-            description: "Synced from GitHub",
-            visibility: "private",
-            initialize_with_readme: false
-          })
+        // Fallback to searching for gitflow-ai if hackathon project not found
+        sendLog(`Hackathon project not found (Status: ${projectRes.status}). Searching for 'gitflow-ai'...`);
+        const searchRes = await fetch(`https://gitlab.com/api/v4/projects?search=gitflow-ai&owned=true`, {
+          headers: { "PRIVATE-TOKEN": token }
         });
-        if (!createRes.ok) throw new Error(`Failed to create project: ${await createRes.text()}`);
-        const createData = await createRes.json();
-        projectId = createData.id;
-        gitlabRepoUrl = createData.http_url_to_repo;
-        sendLog(`Created new project 'gitflow-ai' (ID: ${projectId})`);
+        const searchData = await searchRes.json();
+        const existingProject = searchData.find((p: any) => p.name === "gitflow-ai");
+        
+        if (existingProject) {
+          projectId = existingProject.id;
+          gitlabRepoUrl = existingProject.http_url_to_repo;
+          sendLog(`Found existing project 'gitflow-ai' (ID: ${projectId})`);
+        } else {
+          sendLog("Creating new project 'gitflow-ai' in GitLab...");
+          const createRes = await fetch(`https://gitlab.com/api/v4/projects`, {
+            method: "POST",
+            headers: { "PRIVATE-TOKEN": token, "Content-Type": "application/json" },
+            body: JSON.stringify({
+              name: "gitflow-ai",
+              description: "Synced from GitHub",
+              visibility: "private",
+              initialize_with_readme: false
+            })
+          });
+          if (!createRes.ok) throw new Error(`Failed to create project: ${await createRes.text()}`);
+          const createData = await createRes.json();
+          projectId = createData.id;
+          gitlabRepoUrl = createData.http_url_to_repo;
+          sendLog(`Created new project 'gitflow-ai' (ID: ${projectId})`);
+        }
       }
 
       res.write(`data: ${JSON.stringify({ type: 'projectId', projectId: projectId.toString() })}\n\n`);

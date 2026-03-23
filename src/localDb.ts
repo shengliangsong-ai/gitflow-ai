@@ -39,7 +39,7 @@ export const onSnapshot = (ref: any, callback: (snapshot: any) => void) => {
 
   trigger();
   listeners.add(trigger);
-  return () => listeners.delete(trigger);
+  return () => { listeners.delete(trigger); };
 };
 
 export const addDoc = async (ref: any, data: any) => {
