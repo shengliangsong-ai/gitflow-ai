@@ -1,6 +1,43 @@
-import React, { useEffect, useRef } from 'react';
-import { FileText, GitMerge, Database, Layout, Terminal, Download, Zap, Network, GitBranch } from 'lucide-react';
+import React, { useEffect, useRef, useState } from 'react';
+import { FileText, GitMerge, Database, Layout, Terminal, Download, Zap, Network, GitBranch, Maximize2, X } from 'lucide-react';
 import Mermaid from './Mermaid';
+
+const MERMAID_CHART = `graph TD
+    subgraph Local Environment
+        Dev[Developer]
+        CLI[GitFlow AI CLI]
+        LocalRepo[(Local Git Repository)]
+        LocalCache[(Local SQLite Cache)]
+    end
+
+    subgraph Remote Infrastructure
+        MainRepo[(Main Repository)]
+        StateBranch([Branch: gitflow-ai-state])
+        AuditRepo[(gitflow-audit Repository)]
+        Gemini[Google Gemini 3.1 Pro]
+        Dashboard[Web Dashboard]
+    end
+
+    Dev -->|Runs git-ai commands| CLI
+    CLI <-->|Reads/Commits Code| LocalRepo
+    CLI -->|Fetches queue.json| StateBranch
+    CLI -->|Commits updated queue.json| StateBranch
+    LocalRepo -->|Pushes Code/PRs| MainRepo
+    CLI -->|Syncs Context & Logs| AuditRepo
+    CLI <-->|Reads/Writes Fast Cache| LocalCache
+    LocalCache -.->|Mirrors| AuditRepo
+    CLI <-->|Sends Diffs / Gets Resolutions| Gemini
+    Dashboard <-->|Visualizes Queue| StateBranch
+    Dashboard <-->|Reads Audit Logs| AuditRepo
+    Dashboard <-->|Analyzes Intent| Gemini
+
+    classDef repo fill:#18181b,stroke:#e24329,stroke-width:2px,color:#fff;
+    classDef ai fill:#18181b,stroke:#6366f1,stroke-width:2px,color:#fff;
+    classDef cli fill:#18181b,stroke:#10b981,stroke-width:2px,color:#fff;
+    
+    class MainRepo,AuditRepo,LocalRepo,StateBranch repo;
+    class Gemini ai;
+    class CLI,LocalCache cli;`;
 
 export const SvgDiagram = () => (
   <svg viewBox="0 0 800 400" className="w-full h-auto max-w-3xl mx-auto" xmlns="http://www.w3.org/2000/svg">
@@ -76,12 +113,54 @@ export const SvgDiagram = () => (
 );
 
 export default function Architecture() {
+  const [isMermaidFullScreen, setIsMermaidFullScreen] = useState(false);
+  const [isSvgFullScreen, setIsSvgFullScreen] = useState(false);
   const handleExportPDF = () => {
     window.print();
   };
 
   return (
     <div className="max-w-5xl mx-auto space-y-12 pb-12 print:max-w-none print:p-0 print:m-0 print:bg-white print:text-black">
+      {/* Full Screen SVG Modal */}
+      {isSvgFullScreen && (
+        <div className="fixed inset-0 z-[100] bg-zinc-950/95 backdrop-blur-md flex flex-col p-8">
+          <div className="flex justify-between items-center mb-8">
+            <h2 className="text-2xl font-bold text-white">SVG Architecture Flow</h2>
+            <button 
+              onClick={() => setIsSvgFullScreen(false)}
+              className="p-2 bg-zinc-800 hover:bg-zinc-700 text-white rounded-full transition-colors"
+            >
+              <X className="w-6 h-6" />
+            </button>
+          </div>
+          <div className="flex-1 flex items-center justify-center p-4 bg-zinc-900 rounded-2xl border border-zinc-800 overflow-auto">
+            <div className="w-full max-w-6xl">
+              <SvgDiagram />
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Full Screen Mermaid Modal */}
+      {isMermaidFullScreen && (
+        <div className="fixed inset-0 z-[100] bg-zinc-950/95 backdrop-blur-md flex flex-col p-8">
+          <div className="flex justify-between items-center mb-8">
+            <h2 className="text-2xl font-bold text-white">Mermaid Component Diagram</h2>
+            <button 
+              onClick={() => setIsMermaidFullScreen(false)}
+              className="p-2 bg-zinc-800 hover:bg-zinc-700 text-white rounded-full transition-colors"
+            >
+              <X className="w-6 h-6" />
+            </button>
+          </div>
+          <div className="flex-1 overflow-auto flex items-center justify-center p-4 bg-zinc-900 rounded-2xl border border-zinc-800">
+            <div className="w-full max-w-6xl">
+              <Mermaid chart={MERMAID_CHART} />
+            </div>
+          </div>
+        </div>
+      )}
+
       <div className="flex justify-between items-start print:hidden">
         <div>
           <h1 className="text-3xl font-bold text-white flex items-center gap-3 mb-4">
@@ -258,51 +337,34 @@ export default function Architecture() {
         
         <div className="space-y-12">
           <div>
-            <h3 className="text-xl font-semibold text-zinc-200 mb-4">SVG Architecture Flow</h3>
+            <div className="flex justify-between items-center mb-4">
+              <h3 className="text-xl font-semibold text-zinc-200">SVG Architecture Flow</h3>
+              <button 
+                onClick={() => setIsSvgFullScreen(true)}
+                className="flex items-center gap-2 px-3 py-1.5 bg-zinc-800 hover:bg-zinc-700 text-zinc-300 text-sm rounded-lg transition-colors border border-zinc-700"
+              >
+                <Maximize2 className="w-4 h-4" />
+                Full Screen
+              </button>
+            </div>
             <div className="bg-zinc-950 border border-zinc-800 rounded-lg p-6">
               <SvgDiagram />
             </div>
           </div>
 
           <div>
-            <h3 className="text-xl font-semibold text-zinc-200 mb-4">Mermaid Component Diagram</h3>
+            <div className="flex justify-between items-center mb-4">
+              <h3 className="text-xl font-semibold text-zinc-200">Mermaid Component Diagram</h3>
+              <button 
+                onClick={() => setIsMermaidFullScreen(true)}
+                className="flex items-center gap-2 px-3 py-1.5 bg-zinc-800 hover:bg-zinc-700 text-zinc-300 text-sm rounded-lg transition-colors border border-zinc-700"
+              >
+                <Maximize2 className="w-4 h-4" />
+                Full Screen
+              </button>
+            </div>
             <div className="bg-zinc-950 border border-zinc-800 rounded-lg p-6 overflow-x-auto">
-              <Mermaid chart={`graph TD
-    subgraph Local Environment
-        Dev[Developer]
-        CLI[GitFlow AI CLI]
-        LocalRepo[(Local Git Repository)]
-        LocalCache[(Local SQLite Cache)]
-    end
-
-    subgraph Remote Infrastructure
-        MainRepo[(Main Repository)]
-        StateBranch([Branch: gitflow-ai-state])
-        AuditRepo[(gitflow-audit Repository)]
-        Gemini[Google Gemini 3.1 Pro]
-        Dashboard[Web Dashboard]
-    end
-
-    Dev -->|Runs git-ai commands| CLI
-    CLI <-->|Reads/Commits Code| LocalRepo
-    CLI -->|Fetches queue.json| StateBranch
-    CLI -->|Commits updated queue.json| StateBranch
-    LocalRepo -->|Pushes Code/PRs| MainRepo
-    CLI -->|Syncs Context & Logs| AuditRepo
-    CLI <-->|Reads/Writes Fast Cache| LocalCache
-    LocalCache -.->|Mirrors| AuditRepo
-    CLI <-->|Sends Diffs / Gets Resolutions| Gemini
-    Dashboard <-->|Visualizes Queue| StateBranch
-    Dashboard <-->|Reads Audit Logs| AuditRepo
-    Dashboard <-->|Analyzes Intent| Gemini
-
-    classDef repo fill:#18181b,stroke:#e24329,stroke-width:2px,color:#fff;
-    classDef ai fill:#18181b,stroke:#6366f1,stroke-width:2px,color:#fff;
-    classDef cli fill:#18181b,stroke:#10b981,stroke-width:2px,color:#fff;
-    
-    class MainRepo,AuditRepo,LocalRepo,StateBranch repo;
-    class Gemini ai;
-    class CLI,LocalCache cli;`} />
+              <Mermaid chart={MERMAID_CHART} />
             </div>
           </div>
         </div>
