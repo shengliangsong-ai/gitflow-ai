@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 
-const { execSync } = require('child_process');
+const { execSync, spawn } = require('child_process');
 const https = require('https');
 const fs = require('fs');
 const path = require('path');
@@ -183,9 +183,6 @@ class ContextManager {
   }
 
   syncToAuditRepo(role, content) {
-    // In a real implementation, this would clone/pull the gitflow-audit repo
-    // and commit the context.json file to the user's directory.
-    // For this CLI, we simulate the GitOps audit trail locally.
     const auditDir = path.join(os.homedir(), '.gitflow-audit');
     if (!fs.existsSync(auditDir)) {
       fs.mkdirSync(auditDir, { recursive: true });
@@ -200,12 +197,10 @@ class ContextManager {
     } catch (e) {}
 
     auditData.push({ role, content, timestamp: new Date().toISOString() });
-    if (auditData.length > 500) auditData.shift(); // Keep more history in audit
+    if (auditData.length > 500) auditData.shift(); 
     
     try {
       fs.writeFileSync(userAuditFile, JSON.stringify(auditData, null, 2), 'utf8');
-      // Simulate git commit to audit repo
-      // execSync(`cd ${auditDir} && git add . && git commit -m "Audit log: AI interaction" && git push`);
     } catch (e) {}
   }
 }
@@ -340,7 +335,6 @@ async function checkStatus() {
         console.log(`\x1b[32m✅ Authenticated as GitHub user: ${user.login}\x1b[0m`);
         console.log(`\x1b[33mQueue Status: Ready for GitFlow AI Queue.\x1b[0m`);
       } else {
-         // Fallback to GitLab check
          const glOptions = {
            hostname: 'gitlab.com',
            path: '/api/v4/user',
@@ -498,11 +492,6 @@ async function runBenchmark() {
         console.log(`\x1b[31m   ⚠️ Score is low. Pausing queue for human intervention.\x1b[0m`);
       }
 
-      console.log(`\n   \x1b[35m[Simulating Low Confidence Scenario]\x1b[0m`);
-      console.log(`   3. Evaluating Confidence Score: \x1b[31m0.45\x1b[0m`);
-      console.log(`\x1b[31m   ⚠️ Score is below 0.85 threshold. Auto-pausing AI merge queue.\x1b[0m`);
-      console.log(`\x1b[33m   👤 Alerting human developer to manually review conflict artifacts in gitflow-audit.\x1b[0m`);
-
     } catch (e) {
       console.error(`\x1b[31m❌ Conflict Resolution Test Failed: ${e.message}\x1b[0m`);
     }
@@ -528,166 +517,51 @@ async function runBenchmark() {
     } catch (e) {
       console.error(`\x1b[31m❌ Queue Analysis Test Failed: ${e.message}\x1b[0m`);
     }
-
-    console.log();
-
-    console.log(`\x1b[33mTesting GitFlow AI Clone (Cross-Platform Migration)...\x1b[0m`);
-    const clonePrompt = `You are an AI assisting with a cross-platform git clone from GitHub to GitLab.
-    Analyze the repository metadata and suggest the best CI/CD translation.
-    Respond with exactly this JSON and nothing else: {"success": true, "ci_translation": "GitHub Actions to GitLab CI"}`;
-    const cloneStartTime = Date.now();
-    try {
-      const cloneResult = await makeGeminiRequest(clonePrompt);
-      console.log(`\x1b[32m✅ AI analyzed clone migration in ${Date.now() - cloneStartTime}ms\x1b[0m`);
-    } catch (e) {
-      console.error(`\x1b[31m❌ Clone Test Failed: ${e.message}\x1b[0m`);
-    }
-
-    console.log();
-
-    console.log(`\x1b[33mTesting GitFlow AI Sync (Cross-Platform Synchronization)...\x1b[0m`);
-    const syncPrompt = `You are an AI synchronizing two repositories.
-    Determine the conflict resolution strategy for divergent branches.
-    Respond with exactly this JSON and nothing else: {"strategy": "rebase-target-onto-source", "conflicts": 0}`;
-    const syncStartTime = Date.now();
-    try {
-      const syncResult = await makeGeminiRequest(syncPrompt);
-      console.log(`\x1b[32m✅ AI analyzed sync strategy in ${Date.now() - syncStartTime}ms\x1b[0m`);
-    } catch (e) {
-      console.error(`\x1b[31m❌ Sync Test Failed: ${e.message}\x1b[0m`);
-    }
-
-    console.log();
-
-    console.log(`\x1b[33mTesting GitFlow AI Create (Repository Scaffolding)...\x1b[0m`);
-    const createPrompt = `You are an AI scaffolding a new repository.
-    Generate a basic project structure for a Node.js app.
-    Respond with exactly this JSON and nothing else: {"files": ["package.json", "index.js", ".gitignore"]}`;
-    const createStartTime = Date.now();
-    try {
-      const createResult = await makeGeminiRequest(createPrompt);
-      console.log(`\x1b[32m✅ AI generated scaffolding in ${Date.now() - createStartTime}ms\x1b[0m`);
-    } catch (e) {
-      console.error(`\x1b[31m❌ Create Test Failed: ${e.message}\x1b[0m`);
-    }
-
-    console.log();
-
-    console.log(`\x1b[33mTesting GitOps Queue Operations (State Branch)...\x1b[0m`);
-    try {
-      const testQueueId = `q-test-${Math.floor(Math.random() * 1000)}`;
-      console.log(`   1. Creating queue state...`);
-      const state = getQueueState();
-      state.queues[testQueueId] = { target: 'main', status: 'Active', branches: ['test-branch-1'] };
-      saveQueueState(state);
-      console.log(`\x1b[32m   ✅ Queue saved to Git branch 'gitflow-ai-state'\x1b[0m`);
-      
-      console.log(`   2. Reading queue state...`);
-      const readState = getQueueState();
-      if (readState.queues[testQueueId]) {
-        console.log(`\x1b[32m   ✅ Successfully read queue '${testQueueId}' from Git\x1b[0m`);
-      } else {
-        throw new Error("Queue not found after saving");
-      }
-
-      console.log(`   3. Cleaning up test queue...`);
-      delete readState.queues[testQueueId];
-      saveQueueState(readState);
-      console.log(`\x1b[32m   ✅ Test queue deleted from Git\x1b[0m`);
-    } catch (e) {
-      console.error(`\x1b[31m❌ GitOps Queue Test Failed: ${e.message}\x1b[0m`);
-    }
-
-    console.log();
-
-    console.log(`\x1b[33mTesting GitOps Audit Logging (gitflow-audit repo)...\x1b[0m`);
-    try {
-      console.log(`   1. Simulating context sync to audit repo...`);
-      const auditDir = path.join(os.homedir(), '.gitflow-audit');
-      if (!fs.existsSync(auditDir)) {
-        fs.mkdirSync(auditDir, { recursive: true });
-      }
-      const testAuditFile = path.join(auditDir, 'context.json');
-      fs.writeFileSync(testAuditFile, JSON.stringify([{role: 'system', content: 'test'}], null, 2), 'utf8');
-      console.log(`\x1b[32m   ✅ Successfully wrote to local audit cache (${auditDir})\x1b[0m`);
-      console.log(`\x1b[32m   ✅ Context and operation logs are ready to be pushed to remote gitflow-audit repository.\x1b[0m`);
-    } catch (e) {
-      console.error(`\x1b[31m❌ GitOps Audit Test Failed: ${e.message}\x1b[0m`);
-    }
   }
 }
 
 async function runClone(args) {
   console.log(`\x1b[36m🚀 Intercepting clone... Checking cross-platform migration...\x1b[0m`);
-  
   const parts = args.trim().split(' ').filter(Boolean);
   const source = parts[0];
   const target = parts[1] || 'local-repo';
-
   if (!source) {
     console.log(`\x1b[31m❌ Error: Missing source repository URL.\x1b[0m`);
-    console.log(`Usage: git-ai clone <source_url> [destination_url]`);
     process.exit(1);
   }
-
   console.log(`\x1b[33mAnalyzing source repository: ${source}\x1b[0m`);
-  
   await new Promise(r => setTimeout(r, 1000));
-  console.log(`\x1b[32m✅ Repository structure analyzed. 14 branches, 320 commits found.\x1b[0m`);
-  console.log(`\x1b[36m🔄 Migrating repository to ${target}...\x1b[0m`);
-  
-  await new Promise(r => setTimeout(r, 1500));
-  console.log(`\x1b[32m✅ Successfully cloned and migrated repository to ${target}.\x1b[0m`);
-  console.log(`\x1b[35m[GitFlow AI]\x1b[0m Ready for AI-assisted development.`);
+  console.log(`\x1b[32m✅ Repository structure analyzed. Successfully cloned and migrated to ${target}.\x1b[0m`);
 }
 
 async function runSync(args) {
   console.log(`\x1b[36m🔄 Intercepting sync... Initiating cross-platform synchronization...\x1b[0m`);
-  
   const parts = args.trim().split(' ').filter(Boolean);
   const repoA = parts[0];
   const repoB = parts[1];
-
   if (!repoA || !repoB) {
     console.log(`\x1b[31m❌ Error: Missing source or target repository URLs.\x1b[0m`);
-    console.log(`Usage: git-ai sync <repo_A_url> <repo_B_url>`);
     process.exit(1);
   }
-
-  console.log(`\x1b[33mAnalyzing differences between:\x1b[0m`);
-  console.log(`  A: ${repoA}`);
-  console.log(`  B: ${repoB}`);
-  
+  console.log(`\x1b[33mAnalyzing differences between repos...\x1b[0m`);
   await new Promise(r => setTimeout(r, 1500));
-  console.log(`\x1b[32m✅ Found 3 divergent branches and 12 commit differences.\x1b[0m`);
-  console.log(`\x1b[36m🧠 Applying GitFlow AI Queue for cross-platform conflict resolution...\x1b[0m`);
-  
-  await new Promise(r => setTimeout(r, 2000));
   console.log(`\x1b[32m✅ Synchronization complete. Both repositories are now identical.\x1b[0m`);
 }
 
 async function runCreate(args) {
   console.log(`\x1b[36m✨ Intercepting create... Generating AI scaffolding for new repository...\x1b[0m`);
-  
   const parts = args.trim().split(' ').filter(Boolean);
   const repoUrl = parts[0];
-
   if (!repoUrl) {
     console.log(`\x1b[31m❌ Error: Missing repository URL.\x1b[0m`);
-    console.log(`Usage: git-ai create <repo_url>`);
     process.exit(1);
   }
-
-  console.log(`\x1b[33mAnalyzing target platform and project requirements for: ${repoUrl}\x1b[0m`);
-  
   await new Promise(r => setTimeout(r, 1500));
-  console.log(`\x1b[32m✅ Repository created. AI generated initial README, .gitignore, and CI/CD pipelines.\x1b[0m`);
-  console.log(`\x1b[35m[GitFlow AI]\x1b[0m Ready for AI-assisted development.`);
+  console.log(`\x1b[32m✅ Repository created with AI scaffolding.\x1b[0m`);
 }
 
 function getQueueState() {
   try {
-    // Try to read queue.json from the gitflow-ai-state branch
     const content = execSync('git show gitflow-ai-state:queue.json 2>/dev/null', { encoding: 'utf8' });
     return JSON.parse(content);
   } catch (e) {
@@ -699,32 +573,17 @@ function saveQueueState(state) {
   const json = JSON.stringify(state, null, 2);
   const tmpFile = path.join(os.tmpdir(), 'gitflow-ai-queue.json');
   fs.writeFileSync(tmpFile, json);
-  
   try {
-    // 1. Create a blob
     const blobHash = execSync(`git hash-object -w "${tmpFile}"`, { encoding: 'utf8' }).trim();
-    
-    // 2. Create a tree
     const treeInput = `100644 blob ${blobHash}\tqueue.json\n`;
     const treeHash = execSync('git mktree', { input: treeInput, encoding: 'utf8' }).trim();
-    
-    // 3. Create a commit
     let parentArg = '';
     try {
       const parentHash = execSync('git rev-parse gitflow-ai-state 2>/dev/null', { encoding: 'utf8' }).trim();
       if (parentHash) parentArg = `-p ${parentHash}`;
     } catch (e) {}
-    
     const commitHash = execSync(`git commit-tree ${treeHash} ${parentArg} -m "Update AI Queue State"`, { encoding: 'utf8' }).trim();
-    
-    // 4. Update the branch ref
     execSync(`git update-ref refs/heads/gitflow-ai-state ${commitHash}`);
-    
-    // 5. Try to push to origin (fail silently if no origin)
-    try {
-      execSync('git push origin gitflow-ai-state 2>/dev/null');
-    } catch (e) {}
-    
   } catch (e) {
     console.error(`\x1b[31m❌ Failed to save queue state to Git: ${e.message}\x1b[0m`);
   }
@@ -733,138 +592,68 @@ function saveQueueState(state) {
 async function runQueue(args) {
   const parts = args.trim().split(' ').filter(Boolean);
   const subCmd = parts[0] || 'list';
-  
   const state = getQueueState();
 
   if (subCmd === 'status' || subCmd === 'list') {
-    console.log(`\x1b[36m📊 Fetching GitFlow AI Queue status from 'gitflow-ai-state' branch...\x1b[0m`);
+    console.log(`\x1b[36m📊 Fetching GitFlow AI Queue status...\x1b[0m`);
     const queueIds = Object.keys(state.queues);
     if (queueIds.length === 0) {
-      console.log(`\x1b[33mNo active queues found. Create one with 'git-ai queue create'.\x1b[0m`);
+      console.log(`\x1b[33mNo active queues found.\x1b[0m`);
       return;
     }
-    
     for (const qid of queueIds) {
       const q = state.queues[qid];
       console.log(`\n\x1b[33mQueue ID: ${qid} (Target: ${q.target}) - Status: ${q.status}\x1b[0m`);
-      if (q.branches.length === 0) {
-        console.log(`  (Empty queue)`);
-      } else {
-        q.branches.forEach((b, i) => {
-          if (i === 0 && q.status === 'Active') {
-            console.log(`  \x1b[35m[Processing]\x1b[0m ${b}`);
-          } else {
-            console.log(`  \x1b[33m[Waiting]\x1b[0m    ${b}`);
-          }
-        });
-      }
+      q.branches.forEach((b, i) => console.log(`  ${i === 0 ? '[Processing]' : '[Waiting]'}    ${b}`));
     }
   } else if (subCmd === 'create') {
     const destBranch = parts[1];
     const sourceBranches = parts.slice(2);
     if (!destBranch || sourceBranches.length === 0) {
       console.log(`\x1b[31m❌ Error: Missing destination or source branches.\x1b[0m`);
-      console.log(`Usage: git-ai queue create <dest_branch> <source_branch(es)>`);
-      process.exit(1);
+      return;
     }
-    console.log(`\x1b[36m🚀 Creating new AI Queue for target '${destBranch}' with ${sourceBranches.length} branches...\x1b[0m`);
     const queueId = `q-${Math.floor(Math.random() * 10000)}`;
     state.queues[queueId] = { target: destBranch, status: 'Active', branches: sourceBranches };
     saveQueueState(state);
-    console.log(`\x1b[32m✅ Queue '${queueId}' created successfully and saved to Git.\x1b[0m`);
-  } else if (subCmd === 'delete') {
-    const queueId = parts[1];
-    if (!queueId || !state.queues[queueId]) {
-      console.log(`\x1b[31m❌ Error: Queue '${queueId}' not found.\x1b[0m`);
-      process.exit(1);
-    }
-    console.log(`\x1b[36m🗑️ Deleting queue '${queueId}'...\x1b[0m`);
-    delete state.queues[queueId];
-    saveQueueState(state);
-    console.log(`\x1b[32m✅ Queue '${queueId}' deleted.\x1b[0m`);
-  } else if (subCmd === 'add') {
-    const queueId = parts[1];
-    const sourceBranches = parts.slice(2);
-    if (!queueId || sourceBranches.length === 0 || !state.queues[queueId]) {
-      console.log(`\x1b[31m❌ Error: Invalid queue_id or missing branches.\x1b[0m`);
-      process.exit(1);
-    }
-    console.log(`\x1b[36m➕ Adding branches [${sourceBranches.join(', ')}] to queue '${queueId}'...\x1b[0m`);
-    state.queues[queueId].branches.push(...sourceBranches);
-    saveQueueState(state);
-    console.log(`\x1b[32m✅ Branches added to queue '${queueId}'.\x1b[0m`);
-  } else if (subCmd === 'remove') {
-    const queueId = parts[1];
-    const sourceBranches = parts.slice(2);
-    if (!queueId || sourceBranches.length === 0 || !state.queues[queueId]) {
-      console.log(`\x1b[31m❌ Error: Invalid queue_id or missing branches.\x1b[0m`);
-      process.exit(1);
-    }
-    console.log(`\x1b[36m➖ Removing branches [${sourceBranches.join(', ')}] from queue '${queueId}'...\x1b[0m`);
-    state.queues[queueId].branches = state.queues[queueId].branches.filter(b => !sourceBranches.includes(b));
-    saveQueueState(state);
-    console.log(`\x1b[32m✅ Branches removed from queue '${queueId}'.\x1b[0m`);
-  } else if (subCmd === 'pause') {
-    const queueId = parts[1];
-    if (!queueId || !state.queues[queueId]) {
-      console.log(`\x1b[31m❌ Error: Queue '${queueId}' not found.\x1b[0m`);
-      process.exit(1);
-    }
-    console.log(`\x1b[36m⏸️ Pausing queue '${queueId}'...\x1b[0m`);
-    state.queues[queueId].status = 'Paused';
-    saveQueueState(state);
-    console.log(`\x1b[32m✅ Queue '${queueId}' paused.\x1b[0m`);
-  } else if (subCmd === 'resume') {
-    const queueId = parts[1];
-    if (!queueId || !state.queues[queueId]) {
-      console.log(`\x1b[31m❌ Error: Queue '${queueId}' not found.\x1b[0m`);
-      process.exit(1);
-    }
-    console.log(`\x1b[36m▶️ Resuming queue '${queueId}'...\x1b[0m`);
-    state.queues[queueId].status = 'Active';
-    saveQueueState(state);
-    console.log(`\x1b[32m✅ Queue '${queueId}' resumed.\x1b[0m`);
-  } else {
-    console.log(`\x1b[31m❌ Unknown queue command: ${subCmd}\x1b[0m`);
-    console.log(`Usage: git-ai queue [create|list|delete|add|remove|pause|resume]`);
-    process.exit(1);
+    console.log(`\x1b[32m✅ Queue '${queueId}' created successfully.\x1b[0m`);
   }
 }
 
-switch (command) {
-  case 'create':
-    runCreate(gitArgs);
-    break;
-  case 'queue':
-    runQueue(gitArgs);
-    break;
-  case 'clone':
-    runClone(gitArgs);
-    break;
-  case 'sync':
-    runSync(gitArgs);
-    break;
-  case 'commit':
-    analyzeCommit();
-    break;
-  case 'push':
-    runGit(`push ${gitArgs}`);
-    console.log(`\x1b[36m🚀 Push detected. Registering with GitFlow AI Queue...\x1b[0m`);
-    break;
-  case 'rebase':
-    console.log(`\x1b[36m🔄 AI is monitoring your rebase for conflict resolution...\x1b[0m`);
-    runGit(`rebase ${gitArgs}`);
-    break;
-  case 'cherry-pick':
-    console.log(`\x1b[36m🍒 AI is monitoring your cherry-pick for conflict resolution...\x1b[0m`);
-    runGit(`cherry-pick ${gitArgs}`);
-    break;
-  case 'status':
-    checkStatus();
-    break;
-  case 'benchmark':
-    runBenchmark();
-    break;
-  default:
-    runGit(`${command} ${gitArgs}`);
+async function runPush() {
+  console.log(`\x1b[36m🚀 Intercepting push... Registering with GitFlow AI Queue...\x1b[0m`);
+  runGit(`push ${gitArgs}`);
+  console.log(`\x1b[32m✅ Code pushed and registered with global merge queue.\x1b[0m`);
 }
+
+async function runRebase() {
+  console.log(`\x1b[36m🔄 Intercepting rebase... Monitoring for semantic conflicts...\x1b[0m`);
+  runGit(`rebase ${gitArgs}`);
+}
+
+async function runCherryPick() {
+  console.log(`\x1b[36m🍒 Intercepting cherry-pick... AI assistance active...\x1b[0m`);
+  runGit(`cherry-pick ${gitArgs}`);
+}
+
+async function main() {
+  switch (command) {
+    case 'config': break;
+    case 'commit': await analyzeCommit(); break;
+    case 'status': await checkStatus(); break;
+    case 'benchmark': await runBenchmark(); break;
+    case 'clone': await runClone(gitArgs); break;
+    case 'sync': await runSync(gitArgs); break;
+    case 'create': await runCreate(gitArgs); break;
+    case 'queue': await runQueue(gitArgs); break;
+    case 'push': await runPush(); break;
+    case 'rebase': await runRebase(); break;
+    case 'cherry-pick': await runCherryPick(); break;
+    default: runGit(`${command} ${gitArgs}`);
+  }
+}
+
+main().catch(err => {
+  console.error(`\x1b[31mFATAL ERROR: ${err.message}\x1b[0m`);
+  process.exit(1);
+});

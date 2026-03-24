@@ -2,11 +2,10 @@ import express from "express";
 import { createServer as createViteServer } from "vite";
 import { GoogleGenAI } from "@google/genai";
 import path from "path";
-import { exec } from "child_process";
+import { exec, spawn } from "child_process";
 import util from "util";
 import fs from "fs";
 import os from "os";
-import { exec as gitExec } from 'dugite';
 import { parseArgsStringToArgv } from 'string-argv';
 
 async function startServer() {
@@ -349,6 +348,22 @@ async function startServer() {
       }
 
       res.write(`data: ${JSON.stringify({ type: 'projectId', projectId: projectId.toString() })}\n\n`);
+
+      const gitExec = (args: string[], cwd: string, options: any = {}) => {
+        return new Promise<{ exitCode: number | null, stdout: string, stderr: string }>((resolve) => {
+          const git = spawn('git', args, { cwd, env: options.env || process.env });
+          let stdout = '';
+          let stderr = '';
+          git.stdout.on('data', (data) => { stdout += data.toString(); });
+          git.stderr.on('data', (data) => { stderr += data.toString(); });
+          git.on('close', (code) => {
+            resolve({ exitCode: code, stdout, stderr });
+          });
+          git.on('error', (err) => {
+            resolve({ exitCode: 1, stdout, stderr: err.message });
+          });
+        });
+      };
 
       const execPromise = async (command: string, options: any = {}) => {
         const args = parseArgsStringToArgv(command);
