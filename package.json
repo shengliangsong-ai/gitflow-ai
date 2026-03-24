@@ -9,7 +9,8 @@
     "preview": "vite preview",
     "clean": "rm -rf dist",
     "lint": "tsc --noEmit",
-    "start": "node server.ts"
+    "start": "node server.ts",
+    "test": "node test-gitgraph.js && node test-gitgraph-tree.js && node test-gitgraph-fastforward.js && node test-gitgraph-tree2.js"
   },
   "dependencies": {
     "@gitgraph/js": "^1.4.0",
