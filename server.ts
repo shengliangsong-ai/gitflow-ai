@@ -354,8 +354,14 @@ async function startServer() {
       const authUrl = gitlabRepoUrl.replace('https://', `https://oauth2:${token}@`);
       
       const githubToken = process.env.GITHUB_TOKEN;
+      if (!githubToken) {
+        sendLog("WARNING: GITHUB_TOKEN environment variable is missing. Sync might fail for private repositories.");
+      } else {
+        sendLog("GITHUB_TOKEN is present.");
+      }
+      
       const githubRepoUrl = githubToken 
-        ? `https://${githubToken}@github.com/shengliangsong-ai/gitflow-ai.git`
+        ? `https://x-access-token:${githubToken}@github.com/shengliangsong-ai/gitflow-ai.git`
         : `https://github.com/shengliangsong-ai/gitflow-ai.git`;
         
       sendLog(`Checking if repositories are in sync...`);
@@ -371,7 +377,8 @@ async function startServer() {
           dir: tempDir,
           url: authUrl,
           singleBranch: false,
-          depth: 100
+          depth: 100,
+          onAuth: () => ({ username: 'oauth2', password: token })
         });
         
         sendLog(`$ git remote add github <GITHUB_URL>`);
@@ -388,7 +395,8 @@ async function startServer() {
           http,
           dir: tempDir,
           remote: 'github',
-          depth: 100
+          depth: 100,
+          onAuth: () => githubToken ? ({ username: 'x-access-token', password: githubToken }) : undefined
         });
 
         sendLog(`Configuring git user...`);
@@ -406,7 +414,8 @@ async function startServer() {
                 dir: tempDir,
                 remote: 'origin',
                 ref: `refs/remotes/github/${branchName}`,
-                remoteRef: `refs/heads/${branchName}`
+                remoteRef: `refs/heads/${branchName}`,
+                onAuth: () => ({ username: 'oauth2', password: token })
               });
             } catch (pushErr: any) {
               sendLog(`⚠️ Failed to push branch ${branchName}: ${pushErr.message}`);
@@ -421,7 +430,8 @@ async function startServer() {
             http,
             dir: tempDir,
             remote: 'github',
-            singleBranch: false
+            singleBranch: false,
+            onAuth: () => githubToken ? ({ username: 'x-access-token', password: githubToken }) : undefined
           });
           
           const prRefs = await git.listBranches({ fs, dir: tempDir, remote: 'github' });
@@ -436,7 +446,8 @@ async function startServer() {
                 dir: tempDir,
                 remote: 'origin',
                 ref: `refs/remotes/github/${prBranch}`,
-                remoteRef: `refs/heads/pr-${prNumber}`
+                remoteRef: `refs/heads/pr-${prNumber}`,
+                onAuth: () => ({ username: 'oauth2', password: token })
               });
           }
         } catch (prErr: any) {
