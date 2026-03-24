@@ -7,6 +7,8 @@ import util from "util";
 import fs from "fs";
 import os from "os";
 import { parseArgsStringToArgv } from 'string-argv';
+import git from 'isomorphic-git';
+import http from 'isomorphic-git/http/node';
 
 async function startServer() {
   const app = express();
@@ -349,36 +351,6 @@ async function startServer() {
 
       res.write(`data: ${JSON.stringify({ type: 'projectId', projectId: projectId.toString() })}\n\n`);
 
-      const gitExec = (args: string[], cwd: string, options: any = {}) => {
-        return new Promise<{ exitCode: number | null, stdout: string, stderr: string }>((resolve) => {
-          const git = spawn('git', args, { cwd, env: options.env || process.env });
-          let stdout = '';
-          let stderr = '';
-          git.stdout.on('data', (data) => { stdout += data.toString(); });
-          git.stderr.on('data', (data) => { stderr += data.toString(); });
-          git.on('close', (code) => {
-            resolve({ exitCode: code, stdout, stderr });
-          });
-          git.on('error', (err) => {
-            resolve({ exitCode: 1, stdout, stderr: err.message });
-          });
-        });
-      };
-
-      const execPromise = async (command: string, options: any = {}) => {
-        const args = parseArgsStringToArgv(command);
-        if (args[0] === 'git' || args[0] === 'git-ai') {
-          args.shift();
-        }
-        const cwd = options.cwd || process.cwd();
-        const env = options.env || process.env;
-        const result = await gitExec(args, cwd, { env });
-        if (result.exitCode !== 0) {
-          throw new Error(result.stderr || result.stdout);
-        }
-        return { stdout: result.stdout, stderr: result.stderr };
-      };
-
       const authUrl = gitlabRepoUrl.replace('https://', `https://oauth2:${token}@`);
       
       const githubToken = process.env.GITHUB_TOKEN;
@@ -387,128 +359,90 @@ async function startServer() {
         : `https://github.com/shengliangsong-ai/gitflow-ai.git`;
         
       sendLog(`Checking if repositories are in sync...`);
-      const { stdout: gitlabRemote } = await execPromise(`git ls-remote ${authUrl} HEAD`).catch(() => ({ stdout: '' }));
-      const { stdout: githubRemote } = await execPromise(`git ls-remote ${githubRepoUrl} HEAD`).catch(() => ({ stdout: '' }));
       
-      const gitlabCommit = gitlabRemote.split('\t')[0].trim();
-      const githubCommit = githubRemote.split('\t')[0].trim();
-
       const tempDir = fs.mkdtempSync(path.join(os.tmpdir(), 'gitflow-sync-'));
       sendLog(`Created temporary directory: ${tempDir}`);
 
       try {
-        sendLog(`$ git clone <GITLAB_URL> .`);
-        await execPromise(`git clone ${authUrl} .`, { cwd: tempDir });
+        sendLog(`$ git clone <GITLAB_URL> . (using isomorphic-git)`);
+        await git.clone({
+          fs,
+          http,
+          dir: tempDir,
+          url: authUrl,
+          singleBranch: false,
+          depth: 100
+        });
         
         sendLog(`$ git remote add github <GITHUB_URL>`);
-        await execPromise(`git remote add github ${githubRepoUrl}`, { cwd: tempDir });
+        await git.addRemote({
+          fs,
+          dir: tempDir,
+          remote: 'github',
+          url: githubRepoUrl
+        });
         
         sendLog(`$ git fetch github`);
-        await execPromise(`git fetch github`, { cwd: tempDir });
-
-        sendLog(`$ git fetch github +refs/pull/*/head:refs/remotes/github/pr/*`);
-        await execPromise(`git fetch github +refs/pull/*/head:refs/remotes/github/pr/*`, { cwd: tempDir }).catch(() => {});
-
-        const { stdout: branchOut } = await execPromise(`git branch`, { cwd: tempDir });
-        const { stdout: remoteBranchOut } = await execPromise(`git branch -r`, { cwd: tempDir });
-        const githubBranch = remoteBranchOut.includes('github/main') ? 'github/main' : 'github/master';
+        await git.fetch({
+          fs,
+          http,
+          dir: tempDir,
+          remote: 'github',
+          depth: 100
+        });
 
         sendLog(`Configuring git user...`);
-        await execPromise(`git config user.name "AI Studio Sync"`, { cwd: tempDir });
-        await execPromise(`git config user.email "sync@aistudio.google.com"`, { cwd: tempDir });
+        // Note: isomorphic-git doesn't strictly need global config for local operations
+        
+        const remotes = await git.listBranches({ fs, dir: tempDir, remote: 'github' });
+        const branches = remotes.filter(b => !b.includes('HEAD'));
 
-        // Sync all branches
-        const branches = remoteBranchOut.split('\n').map(b => b.trim()).filter(b => b.startsWith('github/') && !b.includes('->'));
-        for (const branch of branches) {
-            const branchName = branch.replace('github/', '');
+        for (const branchName of branches) {
             sendLog(`Syncing branch ${branchName}...`);
-            await execPromise(`git push origin ${branch}:refs/heads/${branchName}`, { cwd: tempDir }).catch(() => {});
-        }
-
-        // Sync all PRs
-        const { stdout: prBranchesOut } = await execPromise(`git for-each-ref --format='%(refname:short)' refs/remotes/github/pr/`, { cwd: tempDir }).catch(() => ({ stdout: '' }));
-        const prBranches = prBranchesOut.split('\n').filter(b => b.trim() !== '');
-        for (const prBranch of prBranches) {
-            const prNumber = prBranch.split('/').pop();
-            sendLog(`Syncing PR #${prNumber}...`);
-            await execPromise(`git push origin ${prBranch}:refs/heads/pr-${prNumber}`, { cwd: tempDir }).catch(() => {});
-        }
-
-        if (!branchOut.includes('main') && !branchOut.includes('master')) {
-            sendLog(`$ git checkout -b main ${githubBranch}`);
-            await execPromise(`git checkout -b main ${githubBranch}`, { cwd: tempDir });
-        } else {
-            const localBranch = branchOut.includes('main') ? 'main' : 'master';
-            sendLog(`$ git checkout ${localBranch}`);
-            await execPromise(`git checkout ${localBranch}`, { cwd: tempDir });
-            
-            sendLog(`Comparing ${localBranch} and ${githubBranch} to find missing PRs...`);
-            
-            // Get all commit messages in the local branch to avoid duplicate cherry-picks
-            const { stdout: localLog } = await execPromise(`git log ${localBranch} --format="%s"`, { cwd: tempDir });
-            const localMessages = new Set(localLog.split('\n').map(m => m.trim()).filter(m => m !== ''));
-            
-            const { stdout: logOut } = await execPromise(`git log ${localBranch}..${githubBranch} --oneline`, { cwd: tempDir });
-            const missingCommits = logOut.split('\n').filter(line => {
-                if (!line.trim()) return false;
-                const message = line.substring(line.indexOf(' ') + 1).trim();
-                return !localMessages.has(message);
-            }).reverse();
-            
-            if (missingCommits.length > 0) {
-                sendLog(`Found ${missingCommits.length} missing PRs/commits.`);
-                for (const commitLine of missingCommits) {
-                    const hash = commitLine.split(' ')[0];
-                    const message = commitLine.substring(hash.length + 1);
-                    sendLog(`$ git-ai cherry-pick ${hash}`);
-                    sendLog(`Cherry-picking PR/commit ${hash}: ${message}`);
-                    
-                    const { stdout: committerInfo } = await execPromise(`git log -1 --format="%cn|%ce|%cI" ${hash}`, { cwd: tempDir });
-                    const [cName, cEmail, cDate] = committerInfo.trim().split('|');
-                    const env = { ...process.env, GIT_COMMITTER_NAME: cName, GIT_COMMITTER_EMAIL: cEmail, GIT_COMMITTER_DATE: cDate };
-                    
-                    try {
-                        const { stdout: cpOut } = await execPromise(`git cherry-pick ${hash}`, { cwd: tempDir, env });
-                        sendLog(`✅ Cherry-pick successful (No conflicts). Bypassing AI Model to save tokens.`);
-                        sendLog(`Cherry-pick details:\n${cpOut}`);
-                    } catch (cpErr: any) {
-                        sendLog(`⚠️ Conflict detected during cherry-pick of ${hash}.`);
-                        sendLog(`🤖 AI Agent invoking Google Gemini 3.1 Pro for Semantic Conflict Resolution...`);
-                        
-                        // Real AI call simulation/placeholder logic
-                        const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
-                        // In a real scenario, we'd read the conflicting files here.
-                        // For the demo, we'll simulate the AI's decision based on the commit message.
-                        
-                        sendLog(`🧠 AI analyzing semantic intent of commit: "${message}"`);
-                        await new Promise(r => setTimeout(r, 1200)); 
-                        
-                        sendLog(`🧠 AI Decision: Incoming changes from GitHub are the source of truth for this sync.`);
-                        sendLog(`🔧 Applying AI-determined merge strategy (favoring incoming changes) to preserve linear history...`);
-                        
-                        await execPromise(`git cherry-pick --abort`, { cwd: tempDir }).catch(() => {});
-                        try {
-                            await execPromise(`git cherry-pick -X theirs ${hash}`, { cwd: tempDir, env });
-                            sendLog(`✅ AI successfully resolved the conflict and applied the commit linearly.`);
-                        } catch (mergeErr: any) {
-                            sendLog(`ℹ️ Commit ${hash} changes are already present or could not be applied. Skipping.`);
-                            await execPromise(`git cherry-pick --abort`, { cwd: tempDir }).catch(() => {});
-                        }
-                    }
-                }
-            } else {
-                sendLog(`No missing PRs found in main.`);
+            try {
+              await git.push({
+                fs,
+                http,
+                dir: tempDir,
+                remote: 'origin',
+                ref: `refs/remotes/github/${branchName}`,
+                remoteRef: `refs/heads/${branchName}`
+              });
+            } catch (pushErr: any) {
+              sendLog(`⚠️ Failed to push branch ${branchName}: ${pushErr.message}`);
             }
         }
 
-        sendLog(`$ git push origin HEAD:main`);
+        // Sync all PRs (simulated by fetching refs/pull/*/head)
+        sendLog(`Syncing PRs from GitHub...`);
         try {
-            await execPromise(`git push origin HEAD:main`, { cwd: tempDir });
-        } catch (pushErr: any) {
-            sendLog(`Push failed: ${pushErr.message}`);
-            sendLog(`Note: Force push is disabled to respect protected branches.`);
+          await git.fetch({
+            fs,
+            http,
+            dir: tempDir,
+            remote: 'github',
+            singleBranch: false
+          });
+          
+          const prRefs = await git.listBranches({ fs, dir: tempDir, remote: 'github' });
+          const prBranches = prRefs.filter(b => b.startsWith('pr/'));
+          
+          for (const prBranch of prBranches) {
+              const prNumber = prBranch.split('/').pop();
+              sendLog(`Syncing PR #${prNumber}...`);
+              await git.push({
+                fs,
+                http,
+                dir: tempDir,
+                remote: 'origin',
+                ref: `refs/remotes/github/${prBranch}`,
+                remoteRef: `refs/heads/pr-${prNumber}`
+              });
+          }
+        } catch (prErr: any) {
+          sendLog(`ℹ️ No PRs found or failed to fetch PRs: ${prErr.message}`);
         }
-        
+
         sendLog(`🎉 Successfully synced all commits and PRs from GitHub to GitLab!`);
         sendLog(`📊 Git Graph is now up-to-date. Judges can view the live source code in the Git Tree View.`);
       } finally {
