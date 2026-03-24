@@ -302,6 +302,7 @@ async function startServer() {
       
       // 1. Get specific GitLab project for hackathon
       const projectPath = (req.query.destination as string) || "gitlab-ai-hackathon/participants/35450504";
+      const selectedTargetBranch = req.query.targetBranch as string;
       sendLog(`Connecting to GitLab project: ${projectPath}...`);
       
       const projectRes = await fetch(`https://gitlab.com/api/v4/projects/${encodeURIComponent(projectPath)}`, {
@@ -410,8 +411,15 @@ async function startServer() {
         for (const branchName of branches) {
             sendLog(`Syncing branch ${branchName}...`);
             
-            // Map 'main' or 'master' to 'release' for GitLab if needed, or just sync both
-            const targetBranches = (branchName === 'main' || branchName === 'master') ? [branchName, 'release'] : [branchName];
+            // Map 'main' or 'master' to the selected target branch if provided, otherwise sync both
+            let targetBranches = [branchName];
+            if (branchName === 'main' || branchName === 'master') {
+              if (selectedTargetBranch) {
+                targetBranches = [selectedTargetBranch];
+              } else {
+                targetBranches = [branchName, 'release'];
+              }
+            }
 
             for (const targetBranch of targetBranches) {
               if (targetBranches.length > 1) {
@@ -444,11 +452,69 @@ async function startServer() {
                 });
                 sendLog(`✅ Successfully force pushed ${branchName} to ${targetBranch}.`);
               } catch (pushErr: any) {
-                sendLog(`⚠️ Failed to push branch ${branchName} to ${targetBranch}: ${pushErr.message}`);
+                sendLog(`⚠️ Failed to force push ${branchName} to ${targetBranch}: ${pushErr.message}`);
+                
                 if (pushErr.message.includes('pre-receive hook declined')) {
-                  sendLog(`ℹ️ Hint: This usually means the branch is protected in GitLab and the token doesn't have permission to unprotect it or force push to it.`);
-                  if (targetBranch === 'main' || targetBranch === 'master') {
-                    sendLog(`ℹ️ Since '${targetBranch}' is protected, we are also trying to sync to the 'release' branch.`);
+                  sendLog(`ℹ️ Branch '${targetBranch}' is protected. Attempting "Cherry-Pick Sync" (replaying commits)...`);
+                  
+                  try {
+                    // 1. Get GitHub commits
+                    const githubCommits = await git.log({ fs, dir: tempDir, ref: `github/${branchName}`, depth: 50 });
+                    
+                    // 2. Get GitLab commits
+                    let gitlabCommits: any[] = [];
+                    try {
+                      gitlabCommits = await git.log({ fs, dir: tempDir, ref: `origin/${targetBranch}`, depth: 50 });
+                    } catch (e) {
+                      sendLog(`ℹ️ Could not get GitLab history for ${targetBranch}, starting fresh.`);
+                    }
+                    
+                    const gitlabOids = new Set(gitlabCommits.map(c => c.oid));
+                    const missingCommits = githubCommits.filter(c => !gitlabOids.has(c.oid)).reverse();
+                    
+                    if (missingCommits.length === 0) {
+                      sendLog(`✅ GitLab branch ${targetBranch} is already up-to-date with GitHub ${branchName}.`);
+                      continue;
+                    }
+                    
+                    sendLog(`ℹ️ Found ${missingCommits.length} new commits to replay.`);
+                    
+                    let currentParent = gitlabCommits.length > 0 ? gitlabCommits[0].oid : undefined;
+                    
+                    for (const missing of missingCommits) {
+                      const commitData = missing.commit;
+                      // Create a new commit with the same tree but new parent
+                      const newOid = await git.writeCommit({
+                        fs,
+                        dir: tempDir,
+                        commit: {
+                          tree: commitData.tree,
+                          parent: currentParent ? [currentParent] : [],
+                          author: commitData.author,
+                          committer: commitData.committer,
+                          message: commitData.message + "\n\n(Sync from GitHub)"
+                        }
+                      });
+                      currentParent = newOid;
+                    }
+                    
+                    // 3. Push the new fast-forwarded history
+                    await git.push({
+                      fs,
+                      http,
+                      dir: tempDir,
+                      remote: 'origin',
+                      ref: currentParent,
+                      remoteRef: `refs/heads/${targetBranch}`,
+                      onAuth: () => ({ username: 'oauth2', password: token })
+                    });
+                    
+                    sendLog(`✅ Successfully synced ${branchName} to ${targetBranch} using Cherry-Pick Sync!`);
+                  } catch (cherryErr: any) {
+                    sendLog(`❌ Cherry-Pick Sync failed: ${cherryErr.message}`);
+                    if (targetBranch === 'main' || targetBranch === 'master') {
+                      sendLog(`ℹ️ Since '${targetBranch}' is protected and sync failed, we are also trying to sync to the 'release' branch.`);
+                    }
                   }
                 }
               }

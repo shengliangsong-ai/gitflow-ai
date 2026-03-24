@@ -14,6 +14,7 @@ export default function App() {
   const [activeTab, setActiveTab] = useState<'dashboard' | 'terminal' | 'roadmap' | 'cli' | 'architecture' | 'presentation' | 'benchmark' | 'testing'>('dashboard');
   const [isSyncing, setIsSyncing] = useState(false);
   const [syncDestination, setSyncDestination] = useState('gitlab-ai-hackathon/participants/35450504');
+  const [syncBranch, setSyncBranch] = useState('main');
   const [isDocsOpen, setIsDocsOpen] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const docsRef = useRef<HTMLDivElement>(null);
@@ -47,9 +48,9 @@ export default function App() {
     if (isSyncing) return;
     setIsSyncing(true);
     
-    window.dispatchEvent(new CustomEvent('terminal-output', { detail: { type: 'output', content: `Starting GitHub Sync to ${syncDestination}...` } }));
+    window.dispatchEvent(new CustomEvent('terminal-output', { detail: { type: 'output', content: `Starting GitHub Sync to ${syncDestination} (Target Branch: ${syncBranch})...` } }));
     
-    const url = `/api/gitlab/sync-github?destination=${encodeURIComponent(syncDestination)}`;
+    const url = `/api/gitlab/sync-github?destination=${encodeURIComponent(syncDestination)}&targetBranch=${encodeURIComponent(syncBranch)}`;
     const eventSource = new EventSource(url);
     
     eventSource.onmessage = (event) => {
@@ -96,6 +97,17 @@ export default function App() {
                   >
                     <option value="gitlab-ai-hackathon/participants/35450504">Hackathon Repo</option>
                     <option value="shengliang.song.ai/gitflow-ai">Personal Repo</option>
+                  </select>
+                  <div className="w-px h-4 bg-zinc-700 mx-1"></div>
+                  <select
+                    value={syncBranch}
+                    onChange={(e) => setSyncBranch(e.target.value)}
+                    disabled={isSyncing}
+                    className="bg-transparent text-xs text-zinc-300 border-none focus:ring-0 outline-none px-2 py-1 cursor-pointer"
+                  >
+                    <option value="main">main</option>
+                    <option value="release">release</option>
+                    <option value="develop">develop</option>
                   </select>
                   <button
                     onClick={handleSyncGithub}
