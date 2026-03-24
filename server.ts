@@ -6,6 +6,8 @@ import { exec } from "child_process";
 import util from "util";
 import fs from "fs";
 import os from "os";
+import { exec as gitExec } from 'dugite';
+import { parseArgsStringToArgv } from 'string-argv';
 
 async function startServer() {
   const app = express();
@@ -348,7 +350,19 @@ async function startServer() {
 
       res.write(`data: ${JSON.stringify({ type: 'projectId', projectId: projectId.toString() })}\n\n`);
 
-      const execPromise = util.promisify(exec);
+      const execPromise = async (command: string, options: any = {}) => {
+        const args = parseArgsStringToArgv(command);
+        if (args[0] === 'git' || args[0] === 'git-ai') {
+          args.shift();
+        }
+        const cwd = options.cwd || process.cwd();
+        const env = options.env || process.env;
+        const result = await gitExec(args, cwd, { env });
+        if (result.exitCode !== 0) {
+          throw new Error(result.stderr || result.stdout);
+        }
+        return { stdout: result.stdout, stderr: result.stderr };
+      };
 
       const authUrl = gitlabRepoUrl.replace('https://', `https://oauth2:${token}@`);
       
