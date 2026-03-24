@@ -85,7 +85,7 @@ export default function Roadmap() {
           </div>
 
           <div className="flex items-start gap-4 p-4 bg-zinc-950 rounded-xl border border-zinc-800/50">
-            <Clock className="w-6 h-6 text-indigo-400 shrink-0" />
+            <CheckCircle2 className="w-6 h-6 text-emerald-400 shrink-0" />
             <div>
               <h3 className="font-semibold text-white">Day 7: Final Polish & Video Recording</h3>
               <p className="text-sm text-zinc-400">Record the Devpost submission video demonstrating the AI GitFlow.</p>
