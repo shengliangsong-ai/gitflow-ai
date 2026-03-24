@@ -409,18 +409,49 @@ async function startServer() {
 
         for (const branchName of branches) {
             sendLog(`Syncing branch ${branchName}...`);
-            try {
-              await git.push({
-                fs,
-                http,
-                dir: tempDir,
-                remote: 'origin',
-                ref: `refs/remotes/github/${branchName}`,
-                remoteRef: `refs/heads/${branchName}`,
-                onAuth: () => ({ username: 'oauth2', password: token })
-              });
-            } catch (pushErr: any) {
-              sendLog(`⚠️ Failed to push branch ${branchName}: ${pushErr.message}`);
+            
+            // Map 'main' to 'release' for GitLab if needed, or just sync both
+            const targetBranches = branchName === 'main' ? ['main', 'release'] : [branchName];
+
+            for (const targetBranch of targetBranches) {
+              if (targetBranches.length > 1) {
+                sendLog(`  -> Syncing to GitLab branch: ${targetBranch}`);
+              }
+
+              // Try to unprotect the branch in GitLab to allow force push
+              try {
+                const unprotectRes = await fetch(`https://gitlab.com/api/v4/projects/${projectId}/protected_branches/${targetBranch}`, {
+                  method: "DELETE",
+                  headers: { "PRIVATE-TOKEN": token }
+                });
+                if (unprotectRes.ok) {
+                  sendLog(`ℹ️ Unprotected branch ${targetBranch} in GitLab.`);
+                }
+              } catch (unprotectErr) {
+                // Ignore if fetch failed
+              }
+
+              try {
+                await git.push({
+                  fs,
+                  http,
+                  dir: tempDir,
+                  remote: 'origin',
+                  ref: `refs/remotes/github/${branchName}`,
+                  remoteRef: `refs/heads/${targetBranch}`,
+                  force: true,
+                  onAuth: () => ({ username: 'oauth2', password: token })
+                });
+                sendLog(`✅ Successfully pushed ${branchName} to ${targetBranch}.`);
+              } catch (pushErr: any) {
+                sendLog(`⚠️ Failed to push branch ${branchName} to ${targetBranch}: ${pushErr.message}`);
+                if (pushErr.message.includes('pre-receive hook declined')) {
+                  sendLog(`ℹ️ Hint: This usually means the branch is protected in GitLab and the token doesn't have permission to unprotect it or force push to it.`);
+                  if (targetBranch === 'main') {
+                    sendLog(`ℹ️ Since 'main' is protected, we are also trying to sync to the 'release' branch.`);
+                  }
+                }
+              }
             }
         }
 
@@ -452,6 +483,7 @@ async function startServer() {
                 remote: 'origin',
                 ref: `refs/remotes/github/${prBranch}`,
                 remoteRef: `refs/heads/pr-${prNumber}`,
+                force: true,
                 onAuth: () => ({ username: 'oauth2', password: token })
               });
           }
