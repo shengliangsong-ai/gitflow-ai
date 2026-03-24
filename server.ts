@@ -360,11 +360,10 @@ async function startServer() {
         sendLog("GITHUB_TOKEN is present.");
       }
       
-      const githubRepoUrl = githubToken 
-        ? `https://x-access-token:${githubToken}@github.com/shengliangsong-ai/gitflow-ai.git`
-        : `https://github.com/shengliangsong-ai/gitflow-ai.git`;
-        
+      const githubRepoUrl = `https://github.com/shengliangsong-ai/gitflow-ai.git`;
+      
       sendLog(`Checking if repositories are in sync...`);
+      sendLog(`GitHub Repo: ${githubRepoUrl}`);
       
       const tempDir = fs.mkdtempSync(path.join(os.tmpdir(), 'gitflow-sync-'));
       sendLog(`Created temporary directory: ${tempDir}`);
@@ -396,7 +395,10 @@ async function startServer() {
           dir: tempDir,
           remote: 'github',
           depth: 100,
-          onAuth: () => githubToken ? ({ username: 'x-access-token', password: githubToken }) : undefined
+          onAuth: () => {
+            sendLog("Providing GitHub credentials (using token as username)...");
+            return githubToken ? ({ username: githubToken, password: '' }) : undefined;
+          }
         });
 
         sendLog(`Configuring git user...`);
@@ -431,7 +433,10 @@ async function startServer() {
             dir: tempDir,
             remote: 'github',
             singleBranch: false,
-            onAuth: () => githubToken ? ({ username: 'x-access-token', password: githubToken }) : undefined
+            onAuth: () => {
+              sendLog("Providing GitHub credentials for PR sync (using token as username)...");
+              return githubToken ? ({ username: githubToken, password: '' }) : undefined;
+            }
           });
           
           const prRefs = await git.listBranches({ fs, dir: tempDir, remote: 'github' });
@@ -464,7 +469,13 @@ async function startServer() {
       sendLog("DONE");
       res.end();
     } catch (err: any) {
-      sendLog(`ERROR: ${err.message}`);
+      sendLog(`❌ ERROR: ${err.message}`);
+      if (err.message.includes('401')) {
+        sendLog(`ℹ️ Hint: This usually means the GITHUB_TOKEN or GITLAB_TOKEN is invalid or lacks the necessary permissions (repo scope).`);
+      }
+      if (err.message.includes('404')) {
+        sendLog(`ℹ️ Hint: This might mean the repository URL is incorrect or the repository is private and the token doesn't have access.`);
+      }
       sendLog("DONE");
       res.end();
     }
