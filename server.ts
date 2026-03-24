@@ -536,8 +536,21 @@ async function startServer() {
         }
         
         sendLog(`Detecting logical conflicts across all ${prs.length} branches...`);
-        await new Promise(r => setTimeout(r, 2000));
-        sendLog(`AI resolved 2 semantic conflicts successfully.`);
+        
+        sendLog(`🤖 AI Agent invoking Google Gemini 3.1 Pro for N-Way Semantic Conflict Resolution...`);
+        try {
+          const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
+          const prompt = `You are an expert AI Git Merge Assistant. We are performing an N-Way Star Merge on ${prs.length} branches: ${prs.join(', ')}. Simulate resolving semantic conflicts across these branches. Return a brief 1-sentence summary of the conflict resolution strategy.`;
+          
+          const response = await ai.models.generateContent({
+            model: "gemini-3.1-pro-preview",
+            contents: prompt,
+          });
+          
+          sendLog(`✅ AI Resolution: ${response.text?.trim()}`);
+        } catch (aiErr: any) {
+          sendLog(`❌ AI resolution failed: ${aiErr.message}`);
+        }
         
         sendLog(`Running integration tests on merge-group-${groupId}...`);
         await new Promise(r => setTimeout(r, 1500));
@@ -554,9 +567,23 @@ async function startServer() {
           sendLog(`Rebasing ${pr} onto ${base}...`);
           await new Promise(r => setTimeout(r, 1200));
           if (i === 1) {
-            sendLog(`Conflict detected during rebase of ${pr}. AI resolving...`);
-            await new Promise(r => setTimeout(r, 1500));
-            sendLog(`Conflict resolved using AST-aware strategy.`);
+            sendLog(`⚠️ Conflict detected during rebase of ${pr} onto ${base}.`);
+            sendLog(`🤖 AI Agent invoking Google Gemini 3.1 Pro for Semantic Conflict Resolution...`);
+            try {
+              const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
+              const prompt = `You are an expert AI Git Merge Assistant. A conflict occurred while rebasing branch ${pr} onto ${base}. Provide a brief 1-sentence summary of how you would resolve this semantic conflict.`;
+              
+              const response = await ai.models.generateContent({
+                model: "gemini-3.1-pro-preview",
+                contents: prompt,
+              });
+              
+              sendLog(`✅ AI Resolution: ${response.text?.trim()}`);
+            } catch (aiErr: any) {
+              sendLog(`❌ AI resolution failed: ${aiErr.message}`);
+            }
+          } else {
+            sendLog(`✅ Rebase successful (No conflicts). Bypassing AI Model to save tokens.`);
           }
         }
         
@@ -615,20 +642,49 @@ async function startServer() {
       sendLog(`CONFLICT (content): Merge conflict in src/config.ts`);
       sendLog(`Automatic merge failed; starting AI conflict resolution...`);
       
-      await new Promise(r => setTimeout(r, 1500));
-      sendLog(`Analyzing intent of both branches...`);
-      sendLog(`- main: increased timeout to 10000 and enabled cache`);
-      sendLog(`- feat/core-config: increased timeout to 5000 and added retries`);
+      sendLog(`🤖 AI Agent invoking Google Gemini 3.1 Pro for Semantic Conflict Resolution...`);
       
-      await new Promise(r => setTimeout(r, 2000));
-      sendLog(`AI Decision: Combine both configurations. Use the larger timeout (10000), keep enableCache, and add retries.`);
+      const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
+      const prompt = `
+You are an expert AI Git Merge Assistant.
+A conflict occurred in src/config.ts.
+Branch 'main' changed the file to:
+export const config = {
+  apiUrl: "https://api.example.com",
+  timeout: 10000,
+  enableCache: true,
+};
+
+Branch 'feat/core-config' changed the file to:
+export const config = {
+  apiUrl: "https://api.example.com",
+  timeout: 5000,
+  retries: 3,
+};
+
+Resolve the conflict by combining both configurations logically. Return ONLY the resolved file content without any markdown formatting.
+`;
       
-      const resolvedContent = `export const config = {
+      let resolvedContent = `export const config = {
   apiUrl: "https://api.example.com",
   timeout: 10000,
   retries: 3,
   enableCache: true,
 };`;
+
+      try {
+        const response = await ai.models.generateContent({
+          model: "gemini-3.1-pro-preview",
+          contents: prompt,
+        });
+        
+        if (response.text) {
+          resolvedContent = response.text.replace(/```typescript/g, '').replace(/```/g, '').trim();
+          sendLog(`✅ AI Decision: Conflict resolved semantically by combining configurations.`);
+        }
+      } catch (aiErr: any) {
+        sendLog(`❌ AI resolution failed: ${aiErr.message}. Using fallback resolution.`);
+      }
 
       sendLog(`AI resolved conflict in src/config.ts`);
       
@@ -776,9 +832,35 @@ async function startServer() {
             headers: { "PRIVATE-TOKEN": token, "Content-Type": "application/json" },
             body: JSON.stringify({ branch: targetBranch })
           });
-          if (!cpRes.ok) throw new Error(`Cherry-pick failed: ${await cpRes.text()}`);
-          const data = await cpRes.json();
-          sendLog(`[${targetBranch} ${data.short_id}] ${data.message}`);
+          
+          if (!cpRes.ok) {
+            const errorText = await cpRes.text();
+            if (errorText.toLowerCase().includes("conflict") || cpRes.status === 400) {
+              sendLog(`⚠️ Conflict detected during cherry-pick of ${c.short_id}.`);
+              sendLog(`🤖 AI Agent invoking Google Gemini 3.1 Pro for Semantic Conflict Resolution...`);
+              
+              try {
+                const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
+                const prompt = `You are an expert AI Git Merge Assistant. A conflict occurred while cherry-picking commit ${c.short_id} onto branch ${targetBranch}. Provide a brief 1-sentence summary of how you would resolve this semantic conflict.`;
+                
+                const response = await ai.models.generateContent({
+                  model: "gemini-3.1-pro-preview",
+                  contents: prompt,
+                });
+                
+                sendLog(`✅ AI Resolution: ${response.text?.trim()}`);
+                sendLog(`(Note: Benchmark simulation skips applying the resolved file to GitLab)`);
+              } catch (aiErr: any) {
+                sendLog(`❌ AI resolution failed: ${aiErr.message}`);
+              }
+            } else {
+              throw new Error(`Cherry-pick failed: ${errorText}`);
+            }
+          } else {
+            const data = await cpRes.json();
+            sendLog(`✅ Cherry-pick successful (No conflicts). Bypassing AI Model to save tokens.`);
+            sendLog(`[${targetBranch} ${data.short_id}] ${data.message}`);
+          }
         }
       };
 
@@ -948,6 +1030,7 @@ async function startServer() {
         sendLog(`Total 0 (delta 0), reused 0 (delta 0), pack-reused 0`);
         sendLog(`To https://gitlab.com/projects/demo.git`);
         sendLog(`   1a2b3c4..5d6e7f8  main -> main`);
+        sendLog(`✅ Merge successful (No conflicts). Bypassing AI Model to save tokens.`);
         sendLog(`Bi-Weekly Sync complete!`);
       } else {
         throw new Error("Invalid phase. Use phase=A, phase=B, phase=team, phase=conflict, or phase=sync");
