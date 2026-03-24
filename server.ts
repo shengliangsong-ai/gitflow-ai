@@ -410,8 +410,8 @@ async function startServer() {
         for (const branchName of branches) {
             sendLog(`Syncing branch ${branchName}...`);
             
-            // Map 'main' to 'release' for GitLab if needed, or just sync both
-            const targetBranches = branchName === 'main' ? ['main', 'release'] : [branchName];
+            // Map 'main' or 'master' to 'release' for GitLab if needed, or just sync both
+            const targetBranches = (branchName === 'main' || branchName === 'master') ? [branchName, 'release'] : [branchName];
 
             for (const targetBranch of targetBranches) {
               if (targetBranches.length > 1) {
@@ -442,13 +442,13 @@ async function startServer() {
                   force: true,
                   onAuth: () => ({ username: 'oauth2', password: token })
                 });
-                sendLog(`✅ Successfully pushed ${branchName} to ${targetBranch}.`);
+                sendLog(`✅ Successfully force pushed ${branchName} to ${targetBranch}.`);
               } catch (pushErr: any) {
                 sendLog(`⚠️ Failed to push branch ${branchName} to ${targetBranch}: ${pushErr.message}`);
                 if (pushErr.message.includes('pre-receive hook declined')) {
                   sendLog(`ℹ️ Hint: This usually means the branch is protected in GitLab and the token doesn't have permission to unprotect it or force push to it.`);
-                  if (targetBranch === 'main') {
-                    sendLog(`ℹ️ Since 'main' is protected, we are also trying to sync to the 'release' branch.`);
+                  if (targetBranch === 'main' || targetBranch === 'master') {
+                    sendLog(`ℹ️ Since '${targetBranch}' is protected, we are also trying to sync to the 'release' branch.`);
                   }
                 }
               }
