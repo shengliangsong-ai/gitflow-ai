@@ -300,7 +300,7 @@ async function startServer() {
       sendLog("Starting GitHub to GitLab Sync...");
       
       // 1. Get specific GitLab project for hackathon
-      const projectPath = "gitlab-ai-hackathon/participants/35450504";
+      const projectPath = (req.query.destination as string) || "gitlab-ai-hackathon/participants/35450504";
       sendLog(`Connecting to GitLab project: ${projectPath}...`);
       
       const projectRes = await fetch(`https://gitlab.com/api/v4/projects/${encodeURIComponent(projectPath)}`, {

@@ -13,6 +13,7 @@ import { trackPageView } from './analytics';
 export default function App() {
   const [activeTab, setActiveTab] = useState<'dashboard' | 'terminal' | 'roadmap' | 'cli' | 'architecture' | 'presentation' | 'benchmark' | 'testing'>('dashboard');
   const [isSyncing, setIsSyncing] = useState(false);
+  const [syncDestination, setSyncDestination] = useState('gitlab-ai-hackathon/participants/35450504');
   const [isDocsOpen, setIsDocsOpen] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const docsRef = useRef<HTMLDivElement>(null);
@@ -46,9 +47,9 @@ export default function App() {
     if (isSyncing) return;
     setIsSyncing(true);
     
-    window.dispatchEvent(new CustomEvent('terminal-output', { detail: { type: 'output', content: 'Starting GitHub Sync...' } }));
+    window.dispatchEvent(new CustomEvent('terminal-output', { detail: { type: 'output', content: `Starting GitHub Sync to ${syncDestination}...` } }));
     
-    const url = `/api/gitlab/sync-github`;
+    const url = `/api/gitlab/sync-github?destination=${encodeURIComponent(syncDestination)}`;
     const eventSource = new EventSource(url);
     
     eventSource.onmessage = (event) => {
@@ -85,14 +86,26 @@ export default function App() {
               </div>
               
               <div className="hidden md:flex items-center space-x-1">
-                <button
-                  onClick={handleSyncGithub}
-                  disabled={isSyncing}
-                  className={`flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium transition-colors ${isSyncing ? 'bg-zinc-800 text-zinc-500 cursor-not-allowed' : 'bg-purple-600/20 text-purple-400 hover:bg-purple-600/30 hover:text-purple-300'}`}
-                >
-                  <RefreshCw className={`w-4 h-4 ${isSyncing ? 'animate-spin' : ''}`} />
-                  {isSyncing ? 'Syncing...' : 'Sync Git'}
-                </button>
+                <div className="flex items-center bg-zinc-800/50 rounded-lg p-1 mr-2">
+                  <select
+                    value={syncDestination}
+                    onChange={(e) => setSyncDestination(e.target.value)}
+                    disabled={isSyncing}
+                    className="bg-transparent text-xs text-zinc-300 border-none focus:ring-0 outline-none px-2 py-1 cursor-pointer max-w-[140px] truncate"
+                    title={syncDestination}
+                  >
+                    <option value="gitlab-ai-hackathon/participants/35450504">Hackathon Repo</option>
+                    <option value="shengliang.song.ai/gitflow-ai">Personal Repo</option>
+                  </select>
+                  <button
+                    onClick={handleSyncGithub}
+                    disabled={isSyncing}
+                    className={`flex items-center gap-2 px-3 py-1.5 rounded-md text-sm font-medium transition-colors ${isSyncing ? 'bg-zinc-800 text-zinc-500 cursor-not-allowed' : 'bg-purple-600/20 text-purple-400 hover:bg-purple-600/30 hover:text-purple-300'}`}
+                  >
+                    <RefreshCw className={`w-4 h-4 ${isSyncing ? 'animate-spin' : ''}`} />
+                    {isSyncing ? 'Syncing...' : 'Sync Git'}
+                  </button>
+                </div>
                 <button
                   onClick={() => setActiveTab('dashboard')}
                   className={`flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium transition-colors ${activeTab === 'dashboard' ? 'bg-zinc-800 text-white' : 'text-zinc-400 hover:text-white hover:bg-zinc-800/50'}`}
@@ -192,14 +205,26 @@ export default function App() {
         {/* Mobile Menu */}
         {isMobileMenuOpen && (
           <div className="md:hidden border-t border-zinc-800 bg-zinc-900 px-4 py-4 space-y-2">
-            <button
-              onClick={() => { handleSyncGithub(); setIsMobileMenuOpen(false); }}
-              disabled={isSyncing}
-              className={`w-full flex items-center gap-2 px-3 py-3 rounded-lg text-sm font-medium transition-colors ${isSyncing ? 'bg-zinc-800 text-zinc-500 cursor-not-allowed' : 'bg-purple-600/20 text-purple-400 hover:bg-purple-600/30'}`}
-            >
-              <RefreshCw className={`w-4 h-4 ${isSyncing ? 'animate-spin' : ''}`} />
-              {isSyncing ? 'Syncing...' : 'Sync Git'}
-            </button>
+            <div className="flex flex-col gap-2 bg-zinc-800/30 p-2 rounded-lg border border-zinc-800/50">
+              <label className="text-xs text-zinc-500 font-medium px-1">Sync Destination</label>
+              <select
+                value={syncDestination}
+                onChange={(e) => setSyncDestination(e.target.value)}
+                disabled={isSyncing}
+                className="bg-zinc-800 text-sm text-zinc-300 border border-zinc-700 rounded-md focus:ring-1 focus:ring-purple-500 outline-none px-3 py-2 w-full"
+              >
+                <option value="gitlab-ai-hackathon/participants/35450504">Hackathon Repo</option>
+                <option value="shengliang.song.ai/gitflow-ai">Personal Repo</option>
+              </select>
+              <button
+                onClick={() => { handleSyncGithub(); setIsMobileMenuOpen(false); }}
+                disabled={isSyncing}
+                className={`w-full flex justify-center items-center gap-2 px-3 py-3 rounded-lg text-sm font-medium transition-colors mt-1 ${isSyncing ? 'bg-zinc-800 text-zinc-500 cursor-not-allowed' : 'bg-purple-600/20 text-purple-400 hover:bg-purple-600/30'}`}
+              >
+                <RefreshCw className={`w-4 h-4 ${isSyncing ? 'animate-spin' : ''}`} />
+                {isSyncing ? 'Syncing...' : 'Sync Git'}
+              </button>
+            </div>
             <button
               onClick={() => { setActiveTab('dashboard'); setIsMobileMenuOpen(false); }}
               className={`w-full flex items-center gap-2 px-3 py-3 rounded-lg text-sm font-medium transition-colors ${activeTab === 'dashboard' ? 'bg-zinc-800 text-white' : 'text-zinc-400 hover:text-white hover:bg-zinc-800/50'}`}

@@ -121,10 +121,10 @@ export default function Terminal({ className = "h-[calc(100vh-8rem)]" }: { class
     };
   };
 
-  const syncGithub = () => {
+  const syncGithub = (destination?: string) => {
     addHistory('output', `Starting GitHub Sync...`);
     
-    const url = `/api/gitlab/sync-github`;
+    const url = destination ? `/api/gitlab/sync-github?destination=${encodeURIComponent(destination)}` : `/api/gitlab/sync-github`;
     const eventSource = new EventSource(url);
     
     eventSource.onmessage = (event) => {
@@ -184,7 +184,7 @@ export default function Terminal({ className = "h-[calc(100vh-8rem)]" }: { class
   reorder <pr_id> <pos>    - Reorder a PR in the queue (set queuePosition)
   benchmark <phase>        - Run a benchmark phase (A, B, team, conflict)
   merge                    - Auto-resolve conflicts and merge
-  sync                     - Sync with GitHub
+  sync [destination]       - Sync with GitHub (optional destination)
   review <range>           - Review a range of commits (e.g. hash1..hash2)
   clear                    - Clear terminal history`);
           break;
@@ -221,7 +221,7 @@ export default function Terminal({ className = "h-[calc(100vh-8rem)]" }: { class
           break;
 
         case 'sync':
-          syncGithub();
+          syncGithub(args[1]);
           break;
 
         case 'review':
