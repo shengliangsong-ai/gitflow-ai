@@ -1,6 +1,7 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { FileText, GitMerge, Database, Layout, Terminal, Download, Zap, Network, GitBranch, Maximize2, X } from 'lucide-react';
 import Mermaid from './Mermaid';
+import { useReactToPrint } from 'react-to-print';
 
 const MERMAID_CHART = `graph TD
     subgraph Local Environment
@@ -115,12 +116,15 @@ export const SvgDiagram = () => (
 export default function Architecture() {
   const [isMermaidFullScreen, setIsMermaidFullScreen] = useState(false);
   const [isSvgFullScreen, setIsSvgFullScreen] = useState(false);
-  const handleExportPDF = () => {
-    window.print();
-  };
+  const contentRef = useRef<HTMLDivElement>(null);
+
+  const handleExportPDF = useReactToPrint({
+    contentRef,
+    documentTitle: 'GitFlow_AI_Architecture',
+  });
 
   return (
-    <div className="max-w-5xl mx-auto space-y-12 pb-12 print:max-w-none print:p-0 print:m-0 print:bg-white print:text-black">
+    <div ref={contentRef} className="max-w-5xl mx-auto space-y-12 pb-12 print:max-w-none print:p-0 print:m-0 print:bg-white print:text-black">
       {/* Full Screen SVG Modal */}
       {isSvgFullScreen && (
         <div className="fixed inset-0 z-[100] bg-zinc-950/95 backdrop-blur-md flex flex-col p-8">
@@ -257,6 +261,14 @@ export default function Architecture() {
         <h2 className="text-2xl font-bold text-white border-b border-zinc-800 pb-4 print:text-black print:border-gray-300">4. Implementation Details</h2>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <div className="bg-zinc-950 p-6 rounded-xl border border-zinc-800 print:bg-gray-50 print:border-gray-200">
+            <h3 className="text-lg font-bold text-cyan-400 mb-2 flex items-center gap-2 print:text-cyan-600"><Layout className="w-5 h-5"/> GitLab API Integration Architecture</h3>
+            <p className="text-zinc-400 text-sm leading-relaxed print:text-gray-700">The platform implements a secure proxy layer for GitLab API v4. This enables the frontend to fetch project metadata, commit history, and merge request status without exposing the GITLAB_TOKEN to the client.</p>
+          </div>
+          <div className="bg-zinc-950 p-6 rounded-xl border border-zinc-800 print:bg-gray-50 print:border-gray-200">
+            <h3 className="text-lg font-bold text-fuchsia-400 mb-2 flex items-center gap-2 print:text-fuchsia-600"><GitBranch className="w-5 h-5"/> Live Topology Visualization</h3>
+            <p className="text-zinc-400 text-sm leading-relaxed print:text-gray-700">The Repository Graph uses a dynamic coordinate mapping algorithm that translates GitLab commit parent-child relationships into a visual SVG/Canvas topology in real-time.</p>
+          </div>
+          <div className="bg-zinc-950 p-6 rounded-xl border border-zinc-800 print:bg-gray-50 print:border-gray-200">
             <h3 className="text-lg font-bold text-emerald-400 mb-2 flex items-center gap-2 print:text-emerald-600"><Network className="w-5 h-5"/> "Binary Search" Failure Isolation</h3>
             <p className="text-zinc-400 text-sm leading-relaxed print:text-gray-700">When a batch of PRs fails CI, the orchestrator automatically splits the batch into two halves and merges them into separate staging branches. By recursively testing these halves, the AI isolates the specific breaking PR in O(log N) time.</p>
           </div>
@@ -368,6 +380,53 @@ export default function Architecture() {
             </div>
           </div>
         </div>
+      </div>
+
+      {/* 8. Local CLI & API Implementation Details */}
+      <div className="bg-zinc-900 border border-zinc-800 rounded-xl p-8 shadow-xl space-y-6 print:bg-white print:border-gray-200 print:shadow-none print:p-0 print:mb-8">
+        <h2 className="text-2xl font-bold text-white border-b border-zinc-800 pb-4 print:text-black print:border-gray-300">8. Local CLI & API Implementation Details</h2>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div className="bg-zinc-950 p-6 rounded-xl border border-zinc-800 print:bg-gray-50 print:border-gray-200">
+            <h3 className="text-lg font-bold text-blue-400 mb-2 flex items-center gap-2 print:text-blue-600"><Terminal className="w-5 h-5"/> CLI Commit Analysis</h3>
+            <p className="text-zinc-400 text-sm leading-relaxed print:text-gray-700">The local CLI intercepts commits via <code className="text-zinc-300 bg-zinc-800 px-1 py-0.5 rounded">/api/cli/analyze-commit</code>. It sends the diff to Gemini, which returns a JSON payload with a review and a <code className="text-zinc-300 bg-zinc-800 px-1 py-0.5 rounded">blockCommit</code> flag. If true, the CLI halts the git operation, preventing bad code from entering the local repository.</p>
+          </div>
+          <div className="bg-zinc-950 p-6 rounded-xl border border-zinc-800 print:bg-gray-50 print:border-gray-200">
+            <h3 className="text-lg font-bold text-purple-400 mb-2 flex items-center gap-2 print:text-purple-600"><Network className="w-5 h-5"/> Cross-Platform Sync Orchestrator</h3>
+            <p className="text-zinc-400 text-sm leading-relaxed print:text-gray-700">The <code className="text-zinc-300 bg-zinc-800 px-1 py-0.5 rounded">/api/gitlab/sync-github</code> endpoint creates an isolated workspace, clones GitLab, fetches GitHub, and cherry-picks missing commits. If standard git fails, it invokes Gemini to semantically resolve conflicts and applies the AI's strategy.</p>
+          </div>
+          <div className="bg-zinc-950 p-6 rounded-xl border border-zinc-800 print:bg-gray-50 print:border-gray-200">
+            <h3 className="text-lg font-bold text-orange-400 mb-2 flex items-center gap-2 print:text-orange-600"><GitMerge className="w-5 h-5"/> Advanced Merge Topologies</h3>
+            <p className="text-zinc-400 text-sm leading-relaxed print:text-gray-700">The <code className="text-zinc-300 bg-zinc-800 px-1 py-0.5 rounded">/api/gitlab/merge-group</code> endpoint handles N-Way Star Merges (resolving multi-way conflicts simultaneously) and Cascading Rebases (sequentially rebasing dependent PRs, invoking AI only on specific rebase step conflicts).</p>
+          </div>
+          <div className="bg-zinc-950 p-6 rounded-xl border border-zinc-800 print:bg-gray-50 print:border-gray-200">
+            <h3 className="text-lg font-bold text-green-400 mb-2 flex items-center gap-2 print:text-green-600"><Zap className="w-5 h-5"/> Auto-Merge Engine</h3>
+            <p className="text-zinc-400 text-sm leading-relaxed print:text-gray-700">When standard git fails with <code className="text-zinc-300 bg-zinc-800 px-1 py-0.5 rounded">CONFLICT (content)</code>, <code className="text-zinc-300 bg-zinc-800 px-1 py-0.5 rounded">/api/gitlab/auto-merge</code> parses conflict markers and feeds the blocks to Gemini. The AI combines the configurations logically, returning clean content that is automatically committed.</p>
+          </div>
+        </div>
+      </div>
+
+      {/* 9. Future Work */}
+      <div className="bg-zinc-900 border border-zinc-800 rounded-xl p-8 shadow-xl space-y-6 print:bg-white print:border-gray-200 print:shadow-none print:p-0 print:mb-8">
+        <h2 className="text-2xl font-bold text-white border-b border-zinc-800 pb-4 print:text-black print:border-gray-300">9. Future Work</h2>
+        <div className="text-zinc-300 space-y-4 leading-relaxed print:text-gray-800">
+          <p>
+            While the core orchestration engine is complete, we envision the following enhancements for enterprise-scale deployments:
+          </p>
+          <ul className="list-disc pl-6 space-y-2 mt-4">
+            <li><strong>Predictive CI/CD Scaling:</strong> Using historical pipeline data to predict which PRs will take the longest to build, and automatically prioritizing them in the merge queue to optimize overall throughput.</li>
+            <li><strong>Deep Security Context:</strong> Integrating Gemini with SAST/DAST tools to not only resolve semantic conflicts but to actively rewrite vulnerable code patterns during the merge process.</li>
+            <li><strong>IDE Integration:</strong> Bringing the GitFlow AI orchestration layer directly into VS Code and IntelliJ via dedicated extensions, allowing developers to interact with the AI queue without leaving their editor.</li>
+            <li><strong>Jenkins & GitLab CI Integration:</strong> Deeply integrating with Jenkins and GitLab CI pipelines to trigger, monitor, and manage complex build jobs directly from the AI orchestrator, creating a unified CI/CD control plane.</li>
+          </ul>
+        </div>
+      </div>
+
+      {/* Thank You Note */}
+      <div className="bg-zinc-900 border border-zinc-800 rounded-xl p-8 shadow-xl text-center print:bg-white print:border-gray-200 print:shadow-none print:p-0 print:mb-8">
+        <h2 className="text-3xl font-bold text-indigo-400 mb-4 print:text-indigo-600">Thank You!</h2>
+        <p className="text-zinc-300 text-lg max-w-2xl mx-auto print:text-gray-800">
+          Thank you to the judges for reviewing <strong>GitFlow AI v2</strong>. We built this platform to solve the very real pain of "Merge Hell" that engineering teams face every day. We hope you enjoyed exploring the architecture as much as we enjoyed building it!
+        </p>
       </div>
     </div>
   );
