@@ -122,10 +122,37 @@ export default function Architecture() {
   const handleExportPDF = useReactToPrint({
     contentRef,
     documentTitle: 'GitFlow_AI_Architecture',
+    pageStyle: `
+      @page {
+        size: auto;
+        margin: 20mm 20mm 25mm 20mm;
+        @bottom-right {
+          content: "Page " counter(page) " of " counter(pages);
+          font-family: sans-serif;
+          font-size: 10px;
+          color: #6b7280;
+        }
+      }
+      @media print {
+        body {
+          -webkit-print-color-adjust: exact;
+        }
+        .page-number::after {
+          counter-increment: page;
+          content: counter(page);
+        }
+      }
+    `,
   });
 
   return (
-    <div ref={contentRef} className="max-w-5xl mx-auto space-y-12 pb-12 print:max-w-none print:p-0 print:m-0 print:bg-white print:text-black">
+    <div ref={contentRef} className="max-w-5xl mx-auto space-y-12 pb-12 print:max-w-none print:p-0 print:m-0 print:bg-white print:text-black print:pb-16 relative">
+      {/* Print-only Repeating Footer */}
+      <div className="hidden print:flex fixed bottom-0 left-0 right-0 w-full justify-between items-center pb-2 pt-2 bg-white text-gray-500 text-[10px] border-t border-gray-200 z-50">
+        <span>GitFlow AI: Semantic Orchestration Layer Specification</span>
+        <span className="font-medium">Confidential & Proprietary <span className="ml-4 page-number">Page </span></span>
+      </div>
+
       {/* Full Screen SVG Modal */}
       {isSvgFullScreen && (
         <div className="fixed inset-0 z-[100] bg-zinc-950/95 backdrop-blur-md flex flex-col p-8">
