@@ -17,8 +17,8 @@ export default function Dashboard({ destRepoProp }: { destRepoProp?: string }) {
   const [isCreatingProject, setIsCreatingProject] = useState(false);
   const [newProjectName, setNewProjectName] = useState('');
   const [isLoadingBranches, setIsLoadingBranches] = useState(false);
-  const [isBranchesExpanded, setIsBranchesExpanded] = useState(false);
-  const [isWorkflowExpanded, setIsWorkflowExpanded] = useState(false);
+  const [isBranchesExpanded, setIsBranchesExpanded] = useState(true);
+  const [isWorkflowExpanded, setIsWorkflowExpanded] = useState(true);
   const [dashboardTab, setDashboardTab] = useState<'tree' | 'queue'>('tree');
 
   useEffect(() => {
