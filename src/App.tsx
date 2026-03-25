@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useRef } from 'react';
-import { LogOut, GitMerge, Terminal as TerminalIcon, Map, LayoutDashboard, Command, FileText, Presentation as PresentationIcon, RefreshCw, ChevronDown, Menu, X } from 'lucide-react';
+import { LogOut, GitMerge, Terminal as TerminalIcon, Map, LayoutDashboard, Command, FileText, Presentation as PresentationIcon, RefreshCw, ChevronDown, Menu, X, Globe, User } from 'lucide-react';
 import Dashboard from './components/Dashboard';
 import Terminal from './components/Terminal';
 import Roadmap from './components/Roadmap';
@@ -8,10 +8,12 @@ import Architecture from './components/Architecture';
 import Presentation from './components/Presentation';
 import BenchmarkDoc from './components/BenchmarkDoc';
 import TestingInstructions from './components/TestingInstructions';
+import Architect from './components/Architect';
+import About from './components/About';
 import { trackPageView } from './analytics';
 
 export default function App() {
-  const [activeTab, setActiveTab] = useState<'dashboard' | 'terminal' | 'roadmap' | 'cli' | 'architecture' | 'presentation' | 'benchmark' | 'testing'>('dashboard');
+  const [activeTab, setActiveTab] = useState<'dashboard' | 'terminal' | 'roadmap' | 'cli' | 'architecture' | 'presentation' | 'benchmark' | 'testing' | 'architect' | 'about'>('dashboard');
   const [isSyncing, setIsSyncing] = useState(false);
   const [syncDestination, setSyncDestination] = useState('gitlab-ai-hackathon/participants/35450504');
   const [syncBranch, setSyncBranch] = useState('main');
@@ -143,7 +145,7 @@ export default function App() {
                 <div className="relative" ref={docsRef}>
                   <button
                     onClick={() => setIsDocsOpen(!isDocsOpen)}
-                    className={`flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium transition-colors ${['roadmap', 'architecture', 'benchmark', 'presentation', 'testing'].includes(activeTab) ? 'bg-zinc-800 text-white' : 'text-zinc-400 hover:text-white hover:bg-zinc-800/50'}`}
+                    className={`flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium transition-colors ${['roadmap', 'architecture', 'benchmark', 'presentation', 'testing', 'architect', 'about'].includes(activeTab) ? 'bg-zinc-800 text-white' : 'text-zinc-400 hover:text-white hover:bg-zinc-800/50'}`}
                   >
                     <FileText className="w-4 h-4" />
                     Docs
@@ -152,6 +154,21 @@ export default function App() {
                   
                   {isDocsOpen && (
                     <div className="absolute top-full left-0 mt-1 w-48 bg-zinc-900 border border-zinc-800 rounded-lg shadow-xl py-1 z-50">
+                      <button
+                        onClick={() => { setActiveTab('about'); setIsDocsOpen(false); }}
+                        className={`w-full flex items-center gap-2 px-4 py-2 text-sm text-left transition-colors ${activeTab === 'about' ? 'text-white bg-zinc-800/50' : 'text-zinc-400 hover:text-white hover:bg-zinc-800/50'}`}
+                      >
+                        <Globe className="w-4 h-4" />
+                        About Startup
+                      </button>
+                      <button
+                        onClick={() => { setActiveTab('architect'); setIsDocsOpen(false); }}
+                        className={`w-full flex items-center gap-2 px-4 py-2 text-sm text-left transition-colors ${activeTab === 'architect' ? 'text-white bg-zinc-800/50' : 'text-zinc-400 hover:text-white hover:bg-zinc-800/50'}`}
+                      >
+                        <User className="w-4 h-4" />
+                        The Architect
+                      </button>
+                      <div className="h-px bg-zinc-800 my-1"></div>
                       <button
                         onClick={() => { setActiveTab('testing'); setIsDocsOpen(false); }}
                         className={`w-full flex items-center gap-2 px-4 py-2 text-sm text-left transition-colors ${activeTab === 'testing' ? 'text-white bg-zinc-800/50' : 'text-zinc-400 hover:text-white hover:bg-zinc-800/50'}`}
@@ -264,6 +281,20 @@ export default function App() {
                 Documentation
               </div>
               <button
+                onClick={() => { setActiveTab('about'); setIsMobileMenuOpen(false); }}
+                className={`w-full flex items-center gap-2 px-3 py-3 rounded-lg text-sm font-medium transition-colors ${activeTab === 'about' ? 'bg-zinc-800 text-white' : 'text-zinc-400 hover:text-white hover:bg-zinc-800/50'}`}
+              >
+                <Globe className="w-4 h-4" />
+                About Startup
+              </button>
+              <button
+                onClick={() => { setActiveTab('architect'); setIsMobileMenuOpen(false); }}
+                className={`w-full flex items-center gap-2 px-3 py-3 rounded-lg text-sm font-medium transition-colors ${activeTab === 'architect' ? 'bg-zinc-800 text-white' : 'text-zinc-400 hover:text-white hover:bg-zinc-800/50'}`}
+              >
+                <User className="w-4 h-4" />
+                The Architect
+              </button>
+              <button
                 onClick={() => { setActiveTab('testing'); setIsMobileMenuOpen(false); }}
                 className={`w-full flex items-center gap-2 px-3 py-3 rounded-lg text-sm font-medium transition-colors ${activeTab === 'testing' ? 'bg-zinc-800 text-white' : 'text-zinc-400 hover:text-white hover:bg-zinc-800/50'}`}
               >
@@ -314,6 +345,8 @@ export default function App() {
         {activeTab === 'benchmark' && <BenchmarkDoc />}
         {activeTab === 'presentation' && <Presentation />}
         {activeTab === 'testing' && <TestingInstructions />}
+        {activeTab === 'architect' && <Architect />}
+        {activeTab === 'about' && <About />}
       </main>
     </div>
   );

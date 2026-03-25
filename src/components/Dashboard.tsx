@@ -54,46 +54,37 @@ export default function Dashboard({ destRepoProp }: { destRepoProp?: string }) {
           const data = await res.json();
           setProjects(data);
           
+          // Priority 1: Match destRepoProp
           if (destRepoProp) {
             const found = data.find((p: any) => p.path_with_namespace === destRepoProp || p.id.toString() === selectedProjectId);
-            if (found && !selectedProjectId) {
+            if (found) {
               setSelectedProjectId(found.id.toString());
+              return;
             }
-            return; 
           }
 
+          // Priority 2: Match hackathon repo explicitly
           const hackathonProject = data.find((p: any) => 
             p.path_with_namespace === 'gitlab-ai-hackathon/participants/35450504' || 
             p.name === '35450504' || 
             p.path === '35450504'
           );
-          const gitflowProject = data.find((p: any) => p.name === 'gitflow-ai' || p.path === 'gitflow-ai');
           
           if (hackathonProject) {
             setSelectedProjectId(hackathonProject.id.toString());
-          } else if (gitflowProject) {
+            return;
+          }
+
+          // Priority 3: Match gitflow-ai
+          const gitflowProject = data.find((p: any) => p.name === 'gitflow-ai' || p.path === 'gitflow-ai');
+          if (gitflowProject) {
             setSelectedProjectId(gitflowProject.id.toString());
-          } else {
-            // Auto create gitflow-ai if it doesn't exist
-            try {
-              const createRes = await fetch('/api/gitlab/projects', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ name: 'gitflow-ai' })
-              });
-              if (createRes.ok) {
-                const newProject = await createRes.json();
-                setProjects([...data, newProject]);
-                setSelectedProjectId(newProject.id.toString());
-              } else if (data.length > 0) {
-                setSelectedProjectId(data[0].id.toString());
-              }
-            } catch (createErr) {
-              console.error("Failed to auto-create gitflow-ai", createErr);
-              if (data.length > 0) {
-                setSelectedProjectId(data[0].id.toString());
-              }
-            }
+            return;
+          }
+
+          // Fallback: Auto create or select first
+          if (data.length > 0 && !selectedProjectId) {
+            setSelectedProjectId(data[0].id.toString());
           }
         }
       } catch (error) {
