@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { collection, onSnapshot, query, addDoc, updateDoc, doc, serverTimestamp, getDocs, db } from '../localDb';
 import { Branch, PullRequest } from '../types';
-import { GitBranch, GitPullRequest, GitMerge, Plus, RefreshCw, AlertCircle, CheckCircle2, Clock, Play, Zap, Users } from 'lucide-react';
+import { GitBranch, GitPullRequest, GitMerge, Plus, RefreshCw, AlertCircle, CheckCircle2, Clock, Play, Zap, Users, ChevronDown } from 'lucide-react';
 import CreatePRModal from './CreatePRModal';
 import { createGitgraph, templateExtend, TemplateName } from '@gitgraph/js';
 import GitGraphView from './GitGraphView';
@@ -17,6 +17,9 @@ export default function Dashboard() {
   const [isCreatingProject, setIsCreatingProject] = useState(false);
   const [newProjectName, setNewProjectName] = useState('');
   const [isLoadingBranches, setIsLoadingBranches] = useState(false);
+  const [isBranchesExpanded, setIsBranchesExpanded] = useState(false);
+  const [isWorkflowExpanded, setIsWorkflowExpanded] = useState(false);
+  const [dashboardTab, setDashboardTab] = useState<'tree' | 'queue'>('tree');
 
   useEffect(() => {
     // Fetch projects
@@ -398,14 +401,20 @@ export default function Dashboard() {
       {/* Left Column: Branches & Actions */}
       <div className="space-y-6">
         <div className="bg-zinc-900 rounded-2xl border border-zinc-800 p-6">
-          <div className="flex items-center justify-between mb-4">
+          <div 
+            className="flex items-center justify-between mb-4 cursor-pointer select-none"
+            onClick={() => setIsBranchesExpanded(!isBranchesExpanded)}
+          >
             <h2 className="text-lg font-semibold flex items-center gap-2">
               <GitBranch className="w-5 h-5 text-indigo-400" />
               Repository Branches
             </h2>
+            <ChevronDown className={`w-5 h-5 text-zinc-400 transition-transform ${isBranchesExpanded ? 'rotate-180' : ''}`} />
           </div>
           
-          <div className="mb-6 space-y-3">
+          {isBranchesExpanded && (
+            <>
+              <div className="mb-6 space-y-3">
             <div>
               <label className="block text-xs font-semibold text-zinc-500 uppercase tracking-wider mb-2">Select Repository</label>
               <select 
@@ -464,11 +473,20 @@ export default function Dashboard() {
               </>
             )}
           </div>
+            </>
+          )}
         </div>
 
         <div className="bg-zinc-900 rounded-2xl border border-zinc-800 p-6">
-          <h2 className="text-lg font-semibold mb-4">Workflow Actions</h2>
-          <div className="space-y-3">
+          <div 
+            className="flex items-center justify-between mb-4 cursor-pointer select-none"
+            onClick={() => setIsWorkflowExpanded(!isWorkflowExpanded)}
+          >
+            <h2 className="text-lg font-semibold">Workflow Actions</h2>
+            <ChevronDown className={`w-5 h-5 text-zinc-400 transition-transform ${isWorkflowExpanded ? 'rotate-180' : ''}`} />
+          </div>
+          {isWorkflowExpanded && (
+            <div className="space-y-3">
             <button
               onClick={() => setIsCreateModalOpen(true)}
               className="w-full flex items-center justify-center gap-2 py-3 px-4 bg-zinc-800 hover:bg-zinc-700 text-white rounded-xl font-medium transition-colors border border-zinc-700"
@@ -515,23 +533,44 @@ export default function Dashboard() {
               Auto-merges all project branches to primary and rebases.
             </p>
           </div>
+          )}
         </div>
       </div>
 
       {/* Right Column: PR Queue */}
       <div className="lg:col-span-2 space-y-6">
-        <div className="bg-zinc-900 rounded-2xl border border-zinc-800 p-6">
-          <h2 className="text-lg font-semibold flex items-center gap-2 mb-4">
-            <GitBranch className="w-5 h-5 text-indigo-400" />
+        <div className="flex space-x-1 bg-zinc-900/50 p-1 rounded-xl border border-zinc-800">
+          <button
+            onClick={() => setDashboardTab('tree')}
+            className={`flex-1 py-2.5 text-sm font-medium rounded-lg transition-colors flex items-center justify-center gap-2 ${dashboardTab === 'tree' ? 'bg-zinc-800 text-white shadow-sm' : 'text-zinc-400 hover:text-white hover:bg-zinc-800/50'}`}
+          >
+            <GitBranch className="w-4 h-4" />
             Git Tree View
-          </h2>
-          <div className="bg-zinc-950 rounded-xl border border-zinc-800/50 overflow-hidden h-[600px]">
-            <GitGraphView projectId={selectedProjectId} />
-          </div>
+          </button>
+          <button
+            onClick={() => setDashboardTab('queue')}
+            className={`flex-1 py-2.5 text-sm font-medium rounded-lg transition-colors flex items-center justify-center gap-2 ${dashboardTab === 'queue' ? 'bg-zinc-800 text-white shadow-sm' : 'text-zinc-400 hover:text-white hover:bg-zinc-800/50'}`}
+          >
+            <GitPullRequest className="w-4 h-4" />
+            GitFlow AI Queue
+          </button>
         </div>
 
-        <div className="bg-zinc-900 rounded-2xl border border-zinc-800 p-6 min-h-[600px]">
-          <div className="flex items-center justify-between mb-6">
+        {dashboardTab === 'tree' && (
+          <div className="bg-zinc-900 rounded-2xl border border-zinc-800 p-6">
+            <h2 className="text-lg font-semibold flex items-center gap-2 mb-4">
+              <GitBranch className="w-5 h-5 text-indigo-400" />
+              Git Tree View
+            </h2>
+            <div className="bg-zinc-950 rounded-xl border border-zinc-800/50 overflow-hidden h-[600px]">
+              <GitGraphView projectId={selectedProjectId} />
+            </div>
+          </div>
+        )}
+
+        {dashboardTab === 'queue' && (
+          <div className="bg-zinc-900 rounded-2xl border border-zinc-800 p-6 min-h-[600px]">
+            <div className="flex items-center justify-between mb-6">
             <h2 className="text-lg font-semibold flex items-center gap-2">
               <GitPullRequest className="w-5 h-5 text-indigo-400" />
               GitFlow AI Queue
@@ -648,6 +687,7 @@ export default function Dashboard() {
             )}
           </div>
         </div>
+        )}
       </div>
 
       {isCreateModalOpen && (
