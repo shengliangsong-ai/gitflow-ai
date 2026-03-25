@@ -55,11 +55,19 @@ export default function Dashboard({ destRepoProp }: { destRepoProp?: string }) {
           setProjects(data);
           
           if (destRepoProp) {
-            return; // The other useEffect handles setting selectedProjectId
+            const found = data.find((p: any) => p.path_with_namespace === destRepoProp || p.id.toString() === selectedProjectId);
+            if (found && !selectedProjectId) {
+              setSelectedProjectId(found.id.toString());
+            }
+            return; 
           }
 
-          const hackathonProject = data.find((p: any) => p.name === '35450504' || p.path === '35450504');
-          const gitflowProject = data.find((p: any) => p.name === 'gitflow-ai');
+          const hackathonProject = data.find((p: any) => 
+            p.path_with_namespace === 'gitlab-ai-hackathon/participants/35450504' || 
+            p.name === '35450504' || 
+            p.path === '35450504'
+          );
+          const gitflowProject = data.find((p: any) => p.name === 'gitflow-ai' || p.path === 'gitflow-ai');
           
           if (hackathonProject) {
             setSelectedProjectId(hackathonProject.id.toString());
