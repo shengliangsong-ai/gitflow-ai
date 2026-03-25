@@ -84,8 +84,8 @@ export default function Architect() {
             </p>
             
             <div className="flex flex-wrap gap-4 pt-2">
-              <a href="mailto:shengliang.song@gmail.com" className="flex items-center gap-2 text-sm text-zinc-400 hover:text-white transition-colors">
-                <Mail className="w-4 h-4" /> shengliang.song@gmail.com
+              <a href="mailto:shengliang.song.ai@gmail.com" className="flex items-center gap-2 text-sm text-zinc-400 hover:text-white transition-colors">
+                <Mail className="w-4 h-4" /> shengliang.song.ai@gmail.com
               </a>
               <span className="flex items-center gap-2 text-sm text-zinc-400">
                 <MapPin className="w-4 h-4" /> Fremont, CA

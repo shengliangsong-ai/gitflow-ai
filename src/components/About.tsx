@@ -122,7 +122,7 @@ export default function About() {
                 <div className="p-2 bg-zinc-800 rounded-lg">
                   <Mail className="w-5 h-5 text-indigo-400" />
                 </div>
-                <span>contact@gitflow.ai</span>
+                <span>shengliang.song.ai@gmail.com</span>
               </div>
               <div className="flex items-center gap-4 text-zinc-300">
                 <div className="p-2 bg-zinc-800 rounded-lg">
