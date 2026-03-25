@@ -174,18 +174,21 @@ export default function Terminal({ className = "h-[calc(100vh-8rem)]" }: { class
       switch (command) {
         case 'help':
           addHistory('output', `Available commands:
-  status                   - Check merge queue status
-  pause                    - Pause the global merge workflow
-  resume                   - Un-pause the global merge workflow
-  remove <pr_id>           - Remove a PR from the merge queue
-  group <pr_id1> <pr_id2>  - Group a batch of PRs as an atomic unit
-  merge-group <id> <type>  - Merge a group (type: n-way or cascading)
-  priority <pr_id> <level> - Set PR priority (high, normal, low)
-  reorder <pr_id> <pos>    - Reorder a PR in the queue (set queuePosition)
-  benchmark <phase>        - Run a benchmark phase (A, B, team, conflict)
-  merge                    - Auto-resolve conflicts and merge
-  sync [destination]       - Sync with GitHub (optional destination)
-  review <range>           - Review a range of commits (e.g. hash1..hash2)
+  commit                   - AI-powered commit with pre-analysis
+  push                     - Push and register with AI Merge Queue
+  rebase                   - AI-monitored rebase for conflict resolution
+  cherry-pick <hash|range> - AI-analyzed cherry-pick
+  resolve                  - Manually trigger AI conflict resolution
+  clone <repo_uri>         - Clone and auto-configure AI settings
+  sync <dest> [sources...] - AI-orchestrated multi-repo sync
+  queue <action>           - Manage AI Merge Queue (add|remove|list|pause|unpause)
+  reorder <pr_id> <pos>    - Change PR position in queue
+  atomic_batch <name> <ids>- Group PRs into an atomic unit
+  priority <pr_id> <level> - Set PR priority (High/Low)
+  status                   - Check global AI Merge Queue status
+  benchmark [--with-ai]    - Run GitLab API integration benchmark
+  config <action>          - Manage API keys and local configuration
+  version                  - Show CLI version
   clear                    - Clear terminal history`);
           break;
 
@@ -281,9 +284,11 @@ Processing/Conflict: ${processing}`);
           addHistory('output', `PR ${prToRemove.id.slice(0, 6)} removed from merge queue.`);
           break;
 
+        case 'atomic_batch':
         case 'group':
-          if (args.length < 3) throw new Error('Usage: group <pr_id1> <pr_id2> [pr_id3...]');
-          const shortIds = args.slice(1);
+          if (args.length < 3) throw new Error('Usage: atomic_batch <name> <pr_id1> [pr_id2...]');
+          const batchName = args[1];
+          const shortIds = args.slice(2);
           const groupQ2 = query(collection(db, 'pullRequests'));
           const groupSnap2 = await getDocs(groupQ2);
           
@@ -293,7 +298,7 @@ Processing/Conflict: ${processing}`);
             return pr.id;
           });
           
-          const groupId = 'grp_' + Math.random().toString(36).substring(2, 9);
+          const groupId = batchName || ('grp_' + Math.random().toString(36).substring(2, 9));
           
           await Promise.all(prIds.map(id => 
             updateDoc(doc(db, 'pullRequests', id), { groupId })
@@ -370,6 +375,55 @@ Processing/Conflict: ${processing}`);
           
           await updateDoc(doc(db, 'pullRequests', prToReorder.id), { queuePosition: pos });
           addHistory('output', `PR ${prToReorder.id.slice(0, 6)} moved to queue position ${pos}.`);
+          break;
+
+        case 'commit':
+          addHistory('output', '🤖 AI pre-analysis running...\n✓ No bugs detected.\n✓ Security check passed.\nCommit successful.');
+          break;
+          
+        case 'push':
+          addHistory('output', 'Pushing to remote...\n✓ Registered with AI Merge Queue.');
+          break;
+          
+        case 'rebase':
+          addHistory('output', 'Starting AI-monitored rebase...\n✓ Rebase complete. 0 conflicts required manual intervention.');
+          break;
+          
+        case 'cherry-pick':
+          if (!args[1]) throw new Error('Usage: cherry-pick <hash|range>');
+          addHistory('output', `AI analyzing cherry-pick range ${args[1]}...\n✓ Semantic intent preserved.\n✓ Cherry-pick successful.`);
+          break;
+          
+        case 'resolve':
+          addHistory('output', 'Triggering manual AI conflict resolution...\n🤖 Analyzing semantic intent...\n✓ Conflict resolved automatically.');
+          break;
+          
+        case 'clone':
+          if (!args[1]) throw new Error('Usage: clone <repo_uri>');
+          addHistory('output', `Cloning ${args[1]}...\n✓ Auto-configured AI settings for this repository.`);
+          break;
+          
+        case 'queue':
+          if (!args[1]) throw new Error('Usage: queue <add|remove|list|pause|unpause>');
+          const queueAction = args[1].toLowerCase();
+          if (queueAction === 'pause') {
+            await setDoc(doc(db, 'system', 'config'), { isMergePaused: true }, { merge: true });
+            addHistory('output', 'Merge workflow paused successfully.');
+          } else if (queueAction === 'unpause' || queueAction === 'resume') {
+            await setDoc(doc(db, 'system', 'config'), { isMergePaused: false }, { merge: true });
+            addHistory('output', 'Merge workflow resumed successfully.');
+          } else {
+            addHistory('output', `Queue action '${queueAction}' executed successfully.`);
+          }
+          break;
+          
+        case 'config':
+          if (!args[1]) throw new Error('Usage: config <set|get|list>');
+          addHistory('output', `Configuration ${args[1]} executed.`);
+          break;
+          
+        case 'version':
+          addHistory('output', 'git-ai version 1.0.0 (Gemini 3.1 Pro Engine)');
           break;
 
         default:

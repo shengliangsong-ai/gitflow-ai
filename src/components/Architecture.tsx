@@ -287,12 +287,12 @@ export default function Architecture() {
         </div>
       </div>
 
-      {/* 5. Engineer Workflow & CLI */}
+      {/* 5. Engineer Workflow, CLI & API Implementation Details */}
       <div className="bg-zinc-900 border border-zinc-800 rounded-xl p-8 shadow-xl space-y-6 print:bg-white print:border-gray-200 print:shadow-none print:p-0 print:mb-8">
-        <h2 className="text-2xl font-bold text-white border-b border-zinc-800 pb-4 print:text-black print:border-gray-300">5. Engineer Workflow & CLI</h2>
+        <h2 className="text-2xl font-bold text-white border-b border-zinc-800 pb-4 print:text-black print:border-gray-300">5. Engineer Workflow, CLI & API Implementation Details</h2>
         <div className="text-zinc-300 space-y-4 leading-relaxed print:text-gray-800">
           <h3 className="text-xl font-semibold text-white print:text-black">CLI Command Specification</h3>
-          <div className="overflow-x-auto">
+          <div className="overflow-x-auto mb-8">
             <table className="w-full text-left border-collapse">
               <thead>
                 <tr className="border-b border-zinc-800 text-zinc-400 print:border-gray-300 print:text-gray-600">
@@ -303,32 +303,102 @@ export default function Architecture() {
               </thead>
               <tbody className="text-zinc-300 print:text-gray-800 text-sm">
                 <tr className="border-b border-zinc-800/50 print:border-gray-200">
-                  <td className="py-2 px-4 font-mono text-indigo-400 print:text-indigo-600">status</td>
-                  <td className="py-2 px-4">Check merge queue status and PR counts.</td>
+                  <td className="py-2 px-4 font-mono text-indigo-400 print:text-indigo-600">commit</td>
+                  <td className="py-2 px-4">AI-powered commit with pre-analysis.</td>
+                  <td className="py-2 px-4 text-zinc-500">Standard git commit flags</td>
+                </tr>
+                <tr className="border-b border-zinc-800/50 print:border-gray-200">
+                  <td className="py-2 px-4 font-mono text-indigo-400 print:text-indigo-600">push</td>
+                  <td className="py-2 px-4">Push and register with AI Merge Queue.</td>
+                  <td className="py-2 px-4 text-zinc-500">Standard git push flags</td>
+                </tr>
+                <tr className="border-b border-zinc-800/50 print:border-gray-200">
+                  <td className="py-2 px-4 font-mono text-indigo-400 print:text-indigo-600">rebase</td>
+                  <td className="py-2 px-4">AI-monitored rebase for conflict resolution.</td>
+                  <td className="py-2 px-4 text-zinc-500">Standard git rebase flags</td>
+                </tr>
+                <tr className="border-b border-zinc-800/50 print:border-gray-200">
+                  <td className="py-2 px-4 font-mono text-indigo-400 print:text-indigo-600">cherry-pick</td>
+                  <td className="py-2 px-4">AI-analyzed cherry-pick (supports ranges).</td>
+                  <td className="py-2 px-4 text-zinc-500">hash|range</td>
+                </tr>
+                <tr className="border-b border-zinc-800/50 print:border-gray-200">
+                  <td className="py-2 px-4 font-mono text-indigo-400 print:text-indigo-600">resolve</td>
+                  <td className="py-2 px-4">Manually trigger AI conflict resolution.</td>
                   <td className="py-2 px-4 text-zinc-500">None</td>
                 </tr>
                 <tr className="border-b border-zinc-800/50 print:border-gray-200">
-                  <td className="py-2 px-4 font-mono text-indigo-400 print:text-indigo-600">pause / unpause</td>
-                  <td className="py-2 px-4">Suspend or resume the automated merge workflow.</td>
-                  <td className="py-2 px-4 text-zinc-500">None</td>
+                  <td className="py-2 px-4 font-mono text-indigo-400 print:text-indigo-600">clone</td>
+                  <td className="py-2 px-4">Clone and auto-configure AI settings.</td>
+                  <td className="py-2 px-4 text-zinc-500">repo_uri</td>
+                </tr>
+                <tr className="border-b border-zinc-800/50 print:border-gray-200">
+                  <td className="py-2 px-4 font-mono text-indigo-400 print:text-indigo-600">sync</td>
+                  <td className="py-2 px-4">AI-orchestrated multi-repo sync.</td>
+                  <td className="py-2 px-4 text-zinc-500">dest_repo, source_repos[]</td>
+                </tr>
+                <tr className="border-b border-zinc-800/50 print:border-gray-200">
+                  <td className="py-2 px-4 font-mono text-indigo-400 print:text-indigo-600">queue</td>
+                  <td className="py-2 px-4">Manage AI Merge Queue.</td>
+                  <td className="py-2 px-4 text-zinc-500">add|remove|list|pause|unpause</td>
                 </tr>
                 <tr className="border-b border-zinc-800/50 print:border-gray-200">
                   <td className="py-2 px-4 font-mono text-indigo-400 print:text-indigo-600">reorder</td>
-                  <td className="py-2 px-4">Change the priority/order of PRs in queue.</td>
+                  <td className="py-2 px-4">Change PR position in queue.</td>
                   <td className="py-2 px-4 text-zinc-500">pr_id, position</td>
                 </tr>
                 <tr className="border-b border-zinc-800/50 print:border-gray-200">
-                  <td className="py-2 px-4 font-mono text-indigo-400 print:text-indigo-600">batch</td>
+                  <td className="py-2 px-4 font-mono text-indigo-400 print:text-indigo-600">atomic_batch</td>
                   <td className="py-2 px-4">Group PRs into an atomic unit.</td>
-                  <td className="py-2 px-4 text-zinc-500">pr_ids[]</td>
+                  <td className="py-2 px-4 text-zinc-500">name, pr_ids[]</td>
+                </tr>
+                <tr className="border-b border-zinc-800/50 print:border-gray-200">
+                  <td className="py-2 px-4 font-mono text-indigo-400 print:text-indigo-600">priority</td>
+                  <td className="py-2 px-4">Set PR priority (High/Low).</td>
+                  <td className="py-2 px-4 text-zinc-500">pr_id, level</td>
+                </tr>
+                <tr className="border-b border-zinc-800/50 print:border-gray-200">
+                  <td className="py-2 px-4 font-mono text-indigo-400 print:text-indigo-600">status</td>
+                  <td className="py-2 px-4">Check global AI Merge Queue status.</td>
+                  <td className="py-2 px-4 text-zinc-500">None</td>
                 </tr>
                 <tr className="border-b border-zinc-800/50 print:border-gray-200">
                   <td className="py-2 px-4 font-mono text-indigo-400 print:text-indigo-600">benchmark</td>
-                  <td className="py-2 px-4">Trigger automated self-tests showing various conflict resolution examples to prove workflow accuracy.</td>
-                  <td className="py-2 px-4 text-zinc-500">none</td>
+                  <td className="py-2 px-4">Run GitLab API integration benchmark.</td>
+                  <td className="py-2 px-4 text-zinc-500">--with-ai (optional)</td>
+                </tr>
+                <tr className="border-b border-zinc-800/50 print:border-gray-200">
+                  <td className="py-2 px-4 font-mono text-indigo-400 print:text-indigo-600">config</td>
+                  <td className="py-2 px-4">Manage API keys and local configuration.</td>
+                  <td className="py-2 px-4 text-zinc-500">set|get|list</td>
+                </tr>
+                <tr className="border-b border-zinc-800/50 print:border-gray-200">
+                  <td className="py-2 px-4 font-mono text-indigo-400 print:text-indigo-600">version</td>
+                  <td className="py-2 px-4">Show CLI version.</td>
+                  <td className="py-2 px-4 text-zinc-500">None</td>
                 </tr>
               </tbody>
             </table>
+          </div>
+
+          <h3 className="text-xl font-semibold text-white print:text-black mt-8 mb-4">API Implementation Details</h3>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div className="bg-zinc-950 p-6 rounded-xl border border-zinc-800 print:bg-gray-50 print:border-gray-200">
+              <h4 className="text-lg font-bold text-blue-400 mb-2 flex items-center gap-2 print:text-blue-600"><Terminal className="w-5 h-5"/> CLI Commit Analysis</h4>
+              <p className="text-zinc-400 text-sm leading-relaxed print:text-gray-700">The local CLI intercepts commits via <code className="text-zinc-300 bg-zinc-800 px-1 py-0.5 rounded">/api/cli/analyze-commit</code>. It sends the diff to Gemini, which returns a JSON payload with a review and a <code className="text-zinc-300 bg-zinc-800 px-1 py-0.5 rounded">blockCommit</code> flag. If true, the CLI halts the git operation, preventing bad code from entering the local repository.</p>
+            </div>
+            <div className="bg-zinc-950 p-6 rounded-xl border border-zinc-800 print:bg-gray-50 print:border-gray-200">
+              <h4 className="text-lg font-bold text-purple-400 mb-2 flex items-center gap-2 print:text-purple-600"><Network className="w-5 h-5"/> Cross-Platform Sync Orchestrator</h4>
+              <p className="text-zinc-400 text-sm leading-relaxed print:text-gray-700">The <code className="text-zinc-300 bg-zinc-800 px-1 py-0.5 rounded">/api/gitlab/sync-github</code> endpoint creates an isolated workspace, clones GitLab, fetches GitHub, and cherry-picks missing commits. If standard git fails, it invokes Gemini to semantically resolve conflicts and applies the AI's strategy.</p>
+            </div>
+            <div className="bg-zinc-950 p-6 rounded-xl border border-zinc-800 print:bg-gray-50 print:border-gray-200">
+              <h4 className="text-lg font-bold text-orange-400 mb-2 flex items-center gap-2 print:text-orange-600"><GitMerge className="w-5 h-5"/> Advanced Merge Topologies</h4>
+              <p className="text-zinc-400 text-sm leading-relaxed print:text-gray-700">The <code className="text-zinc-300 bg-zinc-800 px-1 py-0.5 rounded">/api/gitlab/merge-group</code> endpoint handles N-Way Star Merges (resolving multi-way conflicts simultaneously) and Cascading Rebases (sequentially rebasing dependent PRs, invoking AI only on specific rebase step conflicts).</p>
+            </div>
+            <div className="bg-zinc-950 p-6 rounded-xl border border-zinc-800 print:bg-gray-50 print:border-gray-200">
+              <h4 className="text-lg font-bold text-green-400 mb-2 flex items-center gap-2 print:text-green-600"><Zap className="w-5 h-5"/> Auto-Merge Engine</h4>
+              <p className="text-zinc-400 text-sm leading-relaxed print:text-gray-700">When standard git fails with <code className="text-zinc-300 bg-zinc-800 px-1 py-0.5 rounded">CONFLICT (content)</code>, <code className="text-zinc-300 bg-zinc-800 px-1 py-0.5 rounded">/api/gitlab/auto-merge</code> parses conflict markers and feeds the blocks to Gemini. The AI combines the configurations logically, returning clean content that is automatically committed.</p>
+            </div>
           </div>
         </div>
       </div>
@@ -382,32 +452,9 @@ export default function Architecture() {
         </div>
       </div>
 
-      {/* 8. Local CLI & API Implementation Details */}
+      {/* 8. Future Work */}
       <div className="bg-zinc-900 border border-zinc-800 rounded-xl p-8 shadow-xl space-y-6 print:bg-white print:border-gray-200 print:shadow-none print:p-0 print:mb-8">
-        <h2 className="text-2xl font-bold text-white border-b border-zinc-800 pb-4 print:text-black print:border-gray-300">8. Local CLI & API Implementation Details</h2>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          <div className="bg-zinc-950 p-6 rounded-xl border border-zinc-800 print:bg-gray-50 print:border-gray-200">
-            <h3 className="text-lg font-bold text-blue-400 mb-2 flex items-center gap-2 print:text-blue-600"><Terminal className="w-5 h-5"/> CLI Commit Analysis</h3>
-            <p className="text-zinc-400 text-sm leading-relaxed print:text-gray-700">The local CLI intercepts commits via <code className="text-zinc-300 bg-zinc-800 px-1 py-0.5 rounded">/api/cli/analyze-commit</code>. It sends the diff to Gemini, which returns a JSON payload with a review and a <code className="text-zinc-300 bg-zinc-800 px-1 py-0.5 rounded">blockCommit</code> flag. If true, the CLI halts the git operation, preventing bad code from entering the local repository.</p>
-          </div>
-          <div className="bg-zinc-950 p-6 rounded-xl border border-zinc-800 print:bg-gray-50 print:border-gray-200">
-            <h3 className="text-lg font-bold text-purple-400 mb-2 flex items-center gap-2 print:text-purple-600"><Network className="w-5 h-5"/> Cross-Platform Sync Orchestrator</h3>
-            <p className="text-zinc-400 text-sm leading-relaxed print:text-gray-700">The <code className="text-zinc-300 bg-zinc-800 px-1 py-0.5 rounded">/api/gitlab/sync-github</code> endpoint creates an isolated workspace, clones GitLab, fetches GitHub, and cherry-picks missing commits. If standard git fails, it invokes Gemini to semantically resolve conflicts and applies the AI's strategy.</p>
-          </div>
-          <div className="bg-zinc-950 p-6 rounded-xl border border-zinc-800 print:bg-gray-50 print:border-gray-200">
-            <h3 className="text-lg font-bold text-orange-400 mb-2 flex items-center gap-2 print:text-orange-600"><GitMerge className="w-5 h-5"/> Advanced Merge Topologies</h3>
-            <p className="text-zinc-400 text-sm leading-relaxed print:text-gray-700">The <code className="text-zinc-300 bg-zinc-800 px-1 py-0.5 rounded">/api/gitlab/merge-group</code> endpoint handles N-Way Star Merges (resolving multi-way conflicts simultaneously) and Cascading Rebases (sequentially rebasing dependent PRs, invoking AI only on specific rebase step conflicts).</p>
-          </div>
-          <div className="bg-zinc-950 p-6 rounded-xl border border-zinc-800 print:bg-gray-50 print:border-gray-200">
-            <h3 className="text-lg font-bold text-green-400 mb-2 flex items-center gap-2 print:text-green-600"><Zap className="w-5 h-5"/> Auto-Merge Engine</h3>
-            <p className="text-zinc-400 text-sm leading-relaxed print:text-gray-700">When standard git fails with <code className="text-zinc-300 bg-zinc-800 px-1 py-0.5 rounded">CONFLICT (content)</code>, <code className="text-zinc-300 bg-zinc-800 px-1 py-0.5 rounded">/api/gitlab/auto-merge</code> parses conflict markers and feeds the blocks to Gemini. The AI combines the configurations logically, returning clean content that is automatically committed.</p>
-          </div>
-        </div>
-      </div>
-
-      {/* 9. Future Work */}
-      <div className="bg-zinc-900 border border-zinc-800 rounded-xl p-8 shadow-xl space-y-6 print:bg-white print:border-gray-200 print:shadow-none print:p-0 print:mb-8">
-        <h2 className="text-2xl font-bold text-white border-b border-zinc-800 pb-4 print:text-black print:border-gray-300">9. Future Work</h2>
+        <h2 className="text-2xl font-bold text-white border-b border-zinc-800 pb-4 print:text-black print:border-gray-300">8. Future Work</h2>
         <div className="text-zinc-300 space-y-4 leading-relaxed print:text-gray-800">
           <p>
             While the core orchestration engine is complete, we envision the following enhancements for enterprise-scale deployments:

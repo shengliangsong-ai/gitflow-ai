@@ -37,3 +37,25 @@ Every AI decision, conflict artifact, and conversation context is stored in the 
 ## 5. Deployment & Security
 - **Environment Variables:** All sensitive tokens (GitHub, GitLab, Gemini) are managed server-side.
 - **Linear History:** The system enforces a "no merge commit" policy on the primary branch, preferring rebase and cherry-pick strategies to keep history clean.
+
+## 6. CLI Command Specification
+
+The `git-ai` CLI supports the following commands to orchestrate AI-powered Git workflows:
+
+| Command | Description | Parameters |
+| :--- | :--- | :--- |
+| `commit` | AI-powered commit with pre-analysis. | Standard git commit flags |
+| `push` | Push and register with AI Merge Queue. | Standard git push flags |
+| `rebase` | AI-monitored rebase for conflict resolution. | Standard git rebase flags |
+| `cherry-pick` | AI-analyzed cherry-pick (supports ranges). | `hash\|range` |
+| `resolve` | Manually trigger AI conflict resolution. | None |
+| `clone` | Clone and auto-configure AI settings. | `repo_uri` |
+| `sync` | AI-orchestrated multi-repo sync. | `dest_repo`, `source_repos[]` |
+| `queue` | Manage AI Merge Queue. | `add\|remove\|list\|pause\|unpause` |
+| `reorder` | Change PR position in queue. | `pr_id`, `position` |
+| `atomic_batch` | Group PRs into an atomic unit. | `name`, `pr_ids[]` |
+| `priority` | Set PR priority (High/Low). | `pr_id`, `level` |
+| `status` | Check global AI Merge Queue status. | None |
+| `benchmark` | Run GitLab API integration benchmark. | `--with-ai` (optional) |
+| `config` | Manage API keys and local configuration. | `set\|get\|list` |
+| `version` | Show CLI version. | None |
