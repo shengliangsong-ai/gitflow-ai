@@ -213,11 +213,11 @@ export default function App() {
             <div className="flex items-center gap-4">
               <button
                 onClick={() => window.location.reload()}
-                className="hidden md:flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium text-zinc-400 hover:text-white hover:bg-zinc-800/50 transition-colors"
+                className="flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium text-zinc-400 hover:text-white hover:bg-zinc-800/50 transition-colors"
                 title="Refresh Application"
               >
                 <RefreshCw className="w-4 h-4" />
-                <span>Refresh</span>
+                <span className="hidden sm:inline">Refresh</span>
               </button>
               
               {/* Mobile menu button */}
@@ -276,6 +276,13 @@ export default function App() {
               Local CLI
             </button>
             
+            <button
+              onClick={() => { window.location.reload(); }}
+              className="w-full flex items-center gap-2 px-3 py-3 rounded-lg text-sm font-medium text-zinc-400 hover:text-white hover:bg-zinc-800/50 transition-colors"
+            >
+              <RefreshCw className="w-4 h-4" />
+              Refresh Application
+            </button>
             <div className="pt-2 pb-1 border-t border-zinc-800 mt-2">
               <div className="px-3 py-2 text-xs font-semibold text-zinc-500 uppercase tracking-wider">
                 Documentation

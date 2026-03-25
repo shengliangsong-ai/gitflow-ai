@@ -22,76 +22,71 @@ export default function Dashboard({ destRepoProp }: { destRepoProp?: string }) {
   const [dashboardTab, setDashboardTab] = useState<'tree' | 'queue'>('tree');
 
   useEffect(() => {
-    if (destRepoProp) {
-      const fetchProject = async () => {
-        try {
-          const encodedPath = encodeURIComponent(destRepoProp);
-          const res = await fetch(`/api/gitlab/projects/${encodedPath}`);
-          if (res.ok) {
-            const project = await res.json();
-            setSelectedProjectId(project.id.toString());
-            setProjects(prev => {
-              if (!prev.find((p: any) => p.id === project.id)) {
-                return [...prev, project];
-              }
-              return prev;
-            });
-          }
-        } catch (error) {
-          console.error("Failed to fetch project by path:", error);
-        }
-      };
-      fetchProject();
-    }
-  }, [destRepoProp]);
-
-  useEffect(() => {
-    // Fetch projects
-    const fetchProjects = async () => {
+    const fetchAllData = async () => {
       try {
-        const res = await fetch('/api/gitlab/projects');
-        if (res.ok) {
-          const data = await res.json();
-          setProjects(data);
-          
-          // Priority 1: Match destRepoProp
-          if (destRepoProp) {
-            const found = data.find((p: any) => p.path_with_namespace === destRepoProp || p.id.toString() === selectedProjectId);
-            if (found) {
-              setSelectedProjectId(found.id.toString());
-              return;
+        // 1. Fetch all projects
+        const projectsRes = await fetch('/api/gitlab/projects');
+        if (!projectsRes.ok) throw new Error('Failed to fetch projects');
+        const allProjects = await projectsRes.json();
+        setProjects(allProjects);
+
+        let targetProjectId = '';
+
+        // 2. Priority 1: Match destRepoProp
+        if (destRepoProp) {
+          const found = allProjects.find((p: any) => p.path_with_namespace === destRepoProp);
+          if (found) {
+            targetProjectId = found.id.toString();
+          } else {
+            // If not in the list, try fetching it specifically
+            try {
+              const encodedPath = encodeURIComponent(destRepoProp);
+              const specificRes = await fetch(`/api/gitlab/projects/${encodedPath}`);
+              if (specificRes.ok) {
+                const specificProject = await specificRes.json();
+                setProjects(prev => [...prev, specificProject]);
+                targetProjectId = specificProject.id.toString();
+              }
+            } catch (err) {
+              console.error("Failed to fetch specific project:", err);
             }
           }
+        }
 
-          // Priority 2: Match hackathon repo explicitly
-          const hackathonProject = data.find((p: any) => 
+        // 3. Priority 2: Match hackathon repo explicitly if targetProjectId still empty
+        if (!targetProjectId) {
+          const hackathonProject = allProjects.find((p: any) => 
             p.path_with_namespace === 'gitlab-ai-hackathon/participants/35450504' || 
             p.name === '35450504' || 
             p.path === '35450504'
           );
-          
           if (hackathonProject) {
-            setSelectedProjectId(hackathonProject.id.toString());
-            return;
-          }
-
-          // Priority 3: Match gitflow-ai
-          const gitflowProject = data.find((p: any) => p.name === 'gitflow-ai' || p.path === 'gitflow-ai');
-          if (gitflowProject) {
-            setSelectedProjectId(gitflowProject.id.toString());
-            return;
-          }
-
-          // Fallback: Auto create or select first
-          if (data.length > 0 && !selectedProjectId) {
-            setSelectedProjectId(data[0].id.toString());
+            targetProjectId = hackathonProject.id.toString();
           }
         }
+
+        // 4. Priority 3: Match gitflow-ai
+        if (!targetProjectId) {
+          const gitflowProject = allProjects.find((p: any) => p.name === 'gitflow-ai' || p.path === 'gitflow-ai');
+          if (gitflowProject) {
+            targetProjectId = gitflowProject.id.toString();
+          }
+        }
+
+        // 5. Fallback: Select first project
+        if (!targetProjectId && allProjects.length > 0) {
+          targetProjectId = allProjects[0].id.toString();
+        }
+
+        if (targetProjectId) {
+          setSelectedProjectId(targetProjectId);
+        }
       } catch (error) {
-        console.error("Failed to fetch projects", error);
+        console.error("Dashboard initialization failed:", error);
       }
     };
-    fetchProjects();
+
+    fetchAllData();
 
     const prsUnsub = onSnapshot(collection(db, 'pullRequests'), (snapshot) => {
       setPullRequests(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as PullRequest)));
@@ -100,7 +95,7 @@ export default function Dashboard({ destRepoProp }: { destRepoProp?: string }) {
     return () => {
       prsUnsub();
     };
-  }, []);
+  }, [destRepoProp]);
 
   useEffect(() => {
     if (!selectedProjectId) return;
