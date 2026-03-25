@@ -28,20 +28,16 @@ export default function Terminal({ className = "h-[calc(100vh-8rem)]", destRepoP
       // Fetch the project ID for the new destination to reload the graph
       const fetchProjectId = async () => {
         try {
-          const res = await fetch('/api/gitlab/projects');
+          const encodedPath = encodeURIComponent(destRepoProp);
+          const res = await fetch(`/api/gitlab/projects/${encodedPath}`);
           if (res.ok) {
-            const data = await res.json();
-            // Try to find the project by path or name matching the destination
-            const repoName = destRepoProp.split('/').pop();
-            const project = data.find((p: any) => p.path_with_namespace === destRepoProp || p.path === repoName || p.name === repoName);
-            if (project) {
-              setProjectId(project.id.toString());
-            } else {
-              setProjectId(null);
-            }
+            const project = await res.json();
+            setProjectId(project.id.toString());
+          } else {
+            setProjectId(null);
           }
         } catch (error) {
-          console.error("Failed to fetch projects", error);
+          console.error("Failed to fetch project by path", error);
           setProjectId(null);
         }
       };

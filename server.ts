@@ -199,6 +199,22 @@ async function startServer() {
     }
   });
 
+  app.get("/api/gitlab/projects/:id", async (req, res) => {
+    const token = process.env.GITLAB_TOKEN;
+    if (!token) return res.status(401).json({ error: "Missing GITLAB_TOKEN" });
+    try {
+      const projectId = encodeURIComponent(req.params.id);
+      const projectRes = await fetch(`https://gitlab.com/api/v4/projects/${projectId}`, {
+        headers: { "PRIVATE-TOKEN": token }
+      });
+      if (!projectRes.ok) throw new Error(`Failed to fetch project: ${await projectRes.text()}`);
+      const project = await projectRes.json();
+      res.json(project);
+    } catch (err: any) {
+      res.status(500).json({ error: err.message });
+    }
+  });
+
   app.post("/api/gitlab/projects", async (req, res) => {
     const token = process.env.GITLAB_TOKEN;
     if (!token) return res.status(401).json({ error: "Missing GITLAB_TOKEN" });

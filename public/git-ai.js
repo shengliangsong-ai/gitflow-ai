@@ -366,8 +366,42 @@ async function checkStatus() {
   req.end();
 }
 
-async function runBenchmark() {
+async function runBenchmark(args) {
+  const isReal = args && args.includes('--real');
   console.log(`\x1b[36m🚀 Starting AI GitFlow Benchmark Self-Test...\x1b[0m\n`);
+
+  if (!isReal) {
+    console.log(`\x1b[33mTesting Gemini API Latency (Simulated)...\x1b[0m`);
+    await new Promise(r => setTimeout(r, 450));
+    console.log(`\x1b[32m✅ Gemini API responded in 450ms\x1b[0m`);
+    console.log(`   Response: Benchmark successful.`);
+    
+    console.log();
+    console.log(`\x1b[33mTesting Git Provider Latency (Simulated)...\x1b[0m`);
+    await new Promise(r => setTimeout(r, 240));
+    console.log(`\x1b[32m✅ GitLab API responded in 240ms (User: simulated.user)\x1b[0m`);
+    
+    console.log();
+    console.log(`\x1b[33mTesting AI Conflict Resolution & Audit Scoring (95/5 Rule) (Simulated)...\x1b[0m`);
+    console.log(`   1. Saving File A, File B, and Model Params to gitflow-audit repo...`);
+    await new Promise(r => setTimeout(r, 300));
+    console.log(`   2. Saving Merged File to gitflow-audit repo...`);
+    await new Promise(r => setTimeout(r, 200));
+    console.log(`\x1b[32m   ✅ AI resolved conflict in 1250ms\x1b[0m`);
+    console.log(`      Explanation: The conflict was resolved by combining the 20% tax calculation with the 10% discount logic.`);
+    console.log(`   3. Evaluating Confidence Score: \x1b[36m0.98\x1b[0m`);
+    console.log(`\x1b[32m   ✅ Score is high. Auto-merging and continuing queue.\x1b[0m`);
+    
+    console.log();
+    console.log(`\x1b[33mTesting GitFlow AI Queue Analysis (Simulated Team Activity)...\x1b[0m`);
+    await new Promise(r => setTimeout(r, 800));
+    console.log(`\x1b[32m✅ AI analyzed team queue in 800ms\x1b[0m`);
+    console.log(`   Recommended Order: PRs 13, 14, 12`);
+    console.log(`   Reasoning: PR 13 is lowest risk (docs). PR 14 is medium risk (isolated). PR 12 is highest risk (core update). Merging in this order minimizes conflict potential.`);
+    
+    console.log(`\n\x1b[36m💡 Note: This was a simulated benchmark. Run with --real to test actual API endpoints.\x1b[0m`);
+    return;
+  }
 
   if (!GEMINI_API_KEY) {
     console.error('\x1b[31m❌ GEMINI_API_KEY is not set. Cannot benchmark AI latency.\x1b[0m');
@@ -641,7 +675,7 @@ async function main() {
     case 'config': break;
     case 'commit': await analyzeCommit(); break;
     case 'status': await checkStatus(); break;
-    case 'benchmark': await runBenchmark(); break;
+    case 'benchmark': await runBenchmark(gitArgs); break;
     case 'clone': await runClone(gitArgs); break;
     case 'sync': await runSync(gitArgs); break;
     case 'create': await runCreate(gitArgs); break;

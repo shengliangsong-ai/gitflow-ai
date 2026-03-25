@@ -22,14 +22,28 @@ export default function Dashboard({ destRepoProp }: { destRepoProp?: string }) {
   const [dashboardTab, setDashboardTab] = useState<'tree' | 'queue'>('tree');
 
   useEffect(() => {
-    if (destRepoProp && projects.length > 0) {
-      const repoName = destRepoProp.split('/').pop();
-      const project = projects.find((p: any) => p.path_with_namespace === destRepoProp || p.path === repoName || p.name === repoName);
-      if (project) {
-        setSelectedProjectId(project.id.toString());
-      }
+    if (destRepoProp) {
+      const fetchProject = async () => {
+        try {
+          const encodedPath = encodeURIComponent(destRepoProp);
+          const res = await fetch(`/api/gitlab/projects/${encodedPath}`);
+          if (res.ok) {
+            const project = await res.json();
+            setSelectedProjectId(project.id.toString());
+            setProjects(prev => {
+              if (!prev.find((p: any) => p.id === project.id)) {
+                return [...prev, project];
+              }
+              return prev;
+            });
+          }
+        } catch (error) {
+          console.error("Failed to fetch project by path:", error);
+        }
+      };
+      fetchProject();
     }
-  }, [destRepoProp, projects]);
+  }, [destRepoProp]);
 
   useEffect(() => {
     // Fetch projects
@@ -41,12 +55,7 @@ export default function Dashboard({ destRepoProp }: { destRepoProp?: string }) {
           setProjects(data);
           
           if (destRepoProp) {
-            const repoName = destRepoProp.split('/').pop();
-            const project = data.find((p: any) => p.path_with_namespace === destRepoProp || p.path === repoName || p.name === repoName);
-            if (project) {
-              setSelectedProjectId(project.id.toString());
-              return;
-            }
+            return; // The other useEffect handles setting selectedProjectId
           }
 
           const hackathonProject = data.find((p: any) => p.name === '35450504' || p.path === '35450504');
