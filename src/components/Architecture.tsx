@@ -2,6 +2,7 @@ import React, { useEffect, useRef, useState } from 'react';
 import { FileText, GitMerge, Database, Layout, Terminal, Download, Zap, Network, GitBranch, Maximize2, X } from 'lucide-react';
 import Mermaid from './Mermaid';
 import { useReactToPrint } from 'react-to-print';
+import QRCode from 'react-qr-code';
 
 const MERMAID_CHART = `graph TD
     subgraph Local Environment
@@ -182,6 +183,22 @@ export default function Architecture() {
           <Download className="w-4 h-4" />
           Export PDF
         </button>
+      </div>
+
+      {/* Print-only Cover Page */}
+      <div className="hidden print:flex flex-col items-center justify-center min-h-screen break-after-page bg-white text-black text-center p-12">
+        <div className="flex-1 flex flex-col justify-center items-center">
+          <FileText className="w-32 h-32 text-indigo-600 mb-8" />
+          <h1 className="text-6xl font-extrabold mb-6 tracking-tight">GitFlow AI</h1>
+          <h2 className="text-4xl font-semibold text-gray-700 mb-8">Semantic Orchestration Layer Specification</h2>
+          <div className="w-48 h-1.5 bg-indigo-600 mb-12 rounded-full"></div>
+          <p className="text-2xl text-gray-500 mb-4 font-medium">Doc ID: GF-AI-2026-001</p>
+          <p className="text-2xl text-gray-500 mb-4 font-medium">Status: Final</p>
+          <p className="text-2xl text-gray-500 mb-12 font-medium">Date: March 2026</p>
+        </div>
+        <div className="mt-auto pb-8">
+          <p className="text-gray-400 text-lg font-medium tracking-widest uppercase">Confidential & Proprietary</p>
+        </div>
       </div>
 
       {/* Print-only Header */}
@@ -474,6 +491,21 @@ export default function Architecture() {
         <p className="text-zinc-300 text-lg max-w-2xl mx-auto print:text-gray-800">
           Thank you to the judges for reviewing <strong>GitFlow AI v2</strong>. We built this platform to solve the very real pain of "Merge Hell" that engineering teams face every day. We hope you enjoyed exploring the architecture as much as we enjoyed building it!
         </p>
+      </div>
+
+      {/* Print-only Back Page */}
+      <div className="hidden print:flex flex-col items-center justify-center min-h-screen break-before-page bg-white text-black text-center p-12">
+        <div className="flex-1 flex flex-col justify-center items-center">
+          <h2 className="text-4xl font-bold mb-12 text-gray-800">Scan to View Online</h2>
+          <div className="p-6 bg-white border-4 border-indigo-100 rounded-2xl shadow-lg mb-12">
+            <QRCode value={window.location.href} size={256} />
+          </div>
+          <p className="text-2xl text-gray-700 mb-4 font-semibold">GitFlow AI Documentation Portal</p>
+          <p className="text-xl text-gray-500 max-w-md">Access the latest interactive diagrams, live queue status, and team analytics.</p>
+        </div>
+        <div className="mt-auto pb-8">
+          <p className="text-gray-400 font-medium">© 2026 GitFlow AI Team. All rights reserved.</p>
+        </div>
       </div>
     </div>
   );
