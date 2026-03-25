@@ -10,7 +10,7 @@ interface HistoryItem {
   content: string;
 }
 
-export default function Terminal({ className = "h-[calc(100vh-8rem)]" }: { className?: string }) {
+export default function Terminal({ className = "h-[calc(100vh-8rem)]", destRepoProp }: { className?: string, destRepoProp?: string }) {
   const [input, setInput] = useState('');
   const [history, setHistory] = useState<HistoryItem[]>([
     { id: '1', type: 'output', content: 'AI GitFlow CLI initialized.' },
@@ -18,7 +18,37 @@ export default function Terminal({ className = "h-[calc(100vh-8rem)]" }: { class
   ]);
   const [isPaused, setIsPaused] = useState(false);
   const [projectId, setProjectId] = useState<string | null>(null);
+  const [destRepo, setDestRepo] = useState<string | null>(destRepoProp || null);
   const bottomRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (destRepoProp) {
+      setDestRepo(destRepoProp);
+      
+      // Fetch the project ID for the new destination to reload the graph
+      const fetchProjectId = async () => {
+        try {
+          const res = await fetch('/api/gitlab/projects');
+          if (res.ok) {
+            const data = await res.json();
+            // Try to find the project by path or name matching the destination
+            const repoName = destRepoProp.split('/').pop();
+            const project = data.find((p: any) => p.path_with_namespace === destRepoProp || p.path === repoName || p.name === repoName);
+            if (project) {
+              setProjectId(project.id.toString());
+            } else {
+              setProjectId(null);
+            }
+          }
+        } catch (error) {
+          console.error("Failed to fetch projects", error);
+          setProjectId(null);
+        }
+      };
+      
+      fetchProjectId();
+    }
+  }, [destRepoProp]);
 
   useEffect(() => {
     // Listen to global system state
@@ -123,6 +153,10 @@ export default function Terminal({ className = "h-[calc(100vh-8rem)]" }: { class
 
   const syncGithub = (destination?: string) => {
     addHistory('output', `Starting GitHub Sync...`);
+    if (destination) {
+      setDestRepo(destination);
+    }
+    setProjectId(null); // Force reload of the graph
     
     const url = destination ? `/api/gitlab/sync-github?destination=${encodeURIComponent(destination)}` : `/api/gitlab/sync-github`;
     const eventSource = new EventSource(url);
@@ -146,6 +180,7 @@ export default function Terminal({ className = "h-[calc(100vh-8rem)]" }: { class
 
   const resetDemo = () => {
     setProjectId(null);
+    setDestRepo(null);
     setHistory([
       { id: Date.now().toString(), type: 'output', content: 'Demo reset. Ready to start Phase A.' }
     ]);
@@ -400,6 +435,7 @@ Processing/Conflict: ${processing}`);
           
         case 'clone':
           if (!args[1]) throw new Error('Usage: clone <repo_uri>');
+          setDestRepo(args[1]);
           addHistory('output', `Cloning ${args[1]}...\n✓ Auto-configured AI settings for this repository.`);
           break;
           
@@ -504,7 +540,9 @@ Processing/Conflict: ${processing}`);
       <div className="bg-zinc-950 rounded-2xl border border-zinc-800 overflow-hidden flex flex-col h-full font-mono shadow-2xl">
         <div className="bg-zinc-900 border-b border-zinc-800 px-4 py-3 flex items-center gap-2">
           <GitBranch className="w-5 h-5 text-emerald-400" />
-          <span className="text-sm font-semibold text-zinc-300">Live Git Graph</span>
+          <span className="text-sm font-semibold text-zinc-300">
+            Live Git Graph {destRepo ? `- ${destRepo}` : ''}
+          </span>
         </div>
         <div className="flex-1 overflow-hidden relative">
           <GitGraphView projectId={projectId} />

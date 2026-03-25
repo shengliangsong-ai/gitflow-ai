@@ -6,7 +6,7 @@ import CreatePRModal from './CreatePRModal';
 import { createGitgraph, templateExtend, TemplateName } from '@gitgraph/js';
 import GitGraphView from './GitGraphView';
 
-export default function Dashboard() {
+export default function Dashboard({ destRepoProp }: { destRepoProp?: string }) {
   const [branches, setBranches] = useState<Branch[]>([]);
   const [pullRequests, setPullRequests] = useState<PullRequest[]>([]);
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
@@ -22,6 +22,16 @@ export default function Dashboard() {
   const [dashboardTab, setDashboardTab] = useState<'tree' | 'queue'>('tree');
 
   useEffect(() => {
+    if (destRepoProp && projects.length > 0) {
+      const repoName = destRepoProp.split('/').pop();
+      const project = projects.find((p: any) => p.path_with_namespace === destRepoProp || p.path === repoName || p.name === repoName);
+      if (project) {
+        setSelectedProjectId(project.id.toString());
+      }
+    }
+  }, [destRepoProp, projects]);
+
+  useEffect(() => {
     // Fetch projects
     const fetchProjects = async () => {
       try {
@@ -29,6 +39,16 @@ export default function Dashboard() {
         if (res.ok) {
           const data = await res.json();
           setProjects(data);
+          
+          if (destRepoProp) {
+            const repoName = destRepoProp.split('/').pop();
+            const project = data.find((p: any) => p.path_with_namespace === destRepoProp || p.path === repoName || p.name === repoName);
+            if (project) {
+              setSelectedProjectId(project.id.toString());
+              return;
+            }
+          }
+
           const hackathonProject = data.find((p: any) => p.name === '35450504' || p.path === '35450504');
           const gitflowProject = data.find((p: any) => p.name === 'gitflow-ai');
           
@@ -561,6 +581,11 @@ export default function Dashboard() {
             <h2 className="text-lg font-semibold flex items-center gap-2 mb-4">
               <GitBranch className="w-5 h-5 text-indigo-400" />
               Git Tree View
+              {selectedProjectId && projects.find(p => p.id.toString() === selectedProjectId)?.web_url && (
+                <span className="text-sm font-normal text-zinc-400 ml-2">
+                  - <a href={projects.find(p => p.id.toString() === selectedProjectId)?.web_url} target="_blank" rel="noreferrer" className="hover:text-indigo-400 transition-colors">{projects.find(p => p.id.toString() === selectedProjectId)?.web_url}</a>
+                </span>
+              )}
             </h2>
             <div className="bg-zinc-950 rounded-xl border border-zinc-800/50 overflow-hidden h-[600px]">
               <GitGraphView projectId={selectedProjectId} />

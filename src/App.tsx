@@ -304,9 +304,9 @@ export default function App() {
       </nav>
 
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {activeTab === 'dashboard' && <Dashboard />}
+        {activeTab === 'dashboard' && <Dashboard destRepoProp={syncDestination} />}
         <div style={{ display: activeTab === 'terminal' ? 'block' : 'none' }}>
-          <Terminal />
+          <Terminal destRepoProp={syncDestination} />
         </div>
         {activeTab === 'roadmap' && <Roadmap />}
         {activeTab === 'cli' && <LocalCLI />}
